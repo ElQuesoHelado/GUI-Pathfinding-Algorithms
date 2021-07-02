@@ -1,7 +1,7 @@
-package main.java;
+package GUIapplication;
 
 import javafx.util.Pair;
-import org.junit.jupiter.api.Assertions;
+import GUIapplication.AdjList;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;

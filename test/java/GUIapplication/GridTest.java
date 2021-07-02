@@ -1,6 +1,7 @@
-package main.java;
+package GUIapplication;
 
 import javafx.scene.canvas.GraphicsContext;
+import GUIapplication.Grid;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

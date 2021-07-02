@@ -1,14 +1,9 @@
-package main.java;
+package GUIapplication;
 
 import javafx.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
-//import java.util.Entry;
 
 class Entry implements Comparable<Entry> {
     private final Integer key;

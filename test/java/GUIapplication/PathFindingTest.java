@@ -1,4 +1,4 @@
-package main.java;
+package GUIapplication;
 
 import org.junit.jupiter.api.Test;
 

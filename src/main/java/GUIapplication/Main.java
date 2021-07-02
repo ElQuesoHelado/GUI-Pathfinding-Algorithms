@@ -1,4 +1,4 @@
-package main.java;
+package GUIapplication;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -10,7 +10,10 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("../resources/ShowcaseView.fxml"));
+        FXMLLoader loader = new FXMLLoader();
+        loader.setLocation(getClass().getResource("/ShowcaseView.fxml"));
+        Parent root = loader.load();
+        
         primaryStage.setTitle("Showcase");
         primaryStage.setScene(new Scene(root, 1000, 800));
         primaryStage.show();

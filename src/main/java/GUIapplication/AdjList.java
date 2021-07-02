@@ -1,4 +1,4 @@
-package main.java;
+package GUIapplication;
 
 import javafx.util.Pair;
 import org.jetbrains.annotations.NotNull;
