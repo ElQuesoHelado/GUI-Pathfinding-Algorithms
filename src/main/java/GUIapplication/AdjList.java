@@ -89,10 +89,7 @@ public class AdjList {
     }
 
     /*
-     * Creates an adjacency list with a given edge list of the structure: String String Integer
-     *  node1 node2 edge1
-     *  node3 node4 edge2
-     *  ...
+     * Wrapper for readAndAddBufferedReader that accepts a string containing an edge list
      * */
     public void processEdgeListStr(@NotNull String edgeList) {
         //Clear HashMap
@@ -110,6 +107,9 @@ public class AdjList {
         }
     }
 
+    /*
+     * Wrapper for readAndAddBufferedReader that accepts a file path for a text file edge list
+     * */
     public void processEdgeListFile(@NotNull String edgeListPath) {
         //Clear HashMap
         adj = new HashMap<>();
@@ -126,6 +126,12 @@ public class AdjList {
         }
     }
 
+    /*
+     * Creates an adjacency list with a given Buffer of structure: String String Integer
+     *  node1 node2 edge1
+     *  node3 node4 edge2
+     *  ...
+     * */
     public void readAndAddBufferedReader(BufferedReader reader) throws Exception {
         String line;
         String[] lineArray;

@@ -5,6 +5,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+/*
+ * Utility class to represent a pair inside a Priority Queue
+ * Comparisons are made with the Integer key, for ranking purposes
+ * */
 class Entry implements Comparable<Entry> {
     private final Integer key;
     private final String value;
@@ -40,11 +44,19 @@ class Entry implements Comparable<Entry> {
     }
 }
 
-
+/*
+ * PathFinding utility class
+ * Contains various algorithms used for pathfinding between two nodes
+ * Includes versions used for drawing inside a javaFX based Grid
+ *  */
 public final class PathFinding {
     private PathFinding() {
     }
 
+    /*
+     * Dijkstra based pathfinding algorithm
+     * Returns the shortest path between startNode and endNode and the vertex sequence path between them
+     * */
     public static int dijkstra(AdjList adjList, String startNode, String endNode, LinkedList<String> pathList) {
         //Hashtable used to store minimal distance from startNode
         HashMap<String, Integer> d = new HashMap<>(adjList.size());
@@ -96,10 +108,9 @@ public final class PathFinding {
             if (Objects.equals(u, endNode)) {
                 //Build path of vertexes
                 String current = endNode;
-                pathList.add(current);
-                while ((current = previousVertexes.get(current)) != null) {
+                if (d.get(u) != Integer.MAX_VALUE) pathList.add(current);
+                while ((current = previousVertexes.get(current)) != null)
                     pathList.addFirst(current);
-                }
                 return d.get(u);
             }
 
