@@ -39,6 +39,27 @@ class PathFindingTest {
         expectedPathList = new LinkedList<>();
         assertEquals(expectedPathList, pathList);
 
+        //Non existent startNode
+        pathList = new LinkedList<>();
+        path = PathFinding.dijkstra(list, "55Z", "55K", pathList);
+        assertEquals(Integer.MAX_VALUE, path);
+        expectedPathList = new LinkedList<>();
+        assertEquals(expectedPathList, pathList);
+
+        //Non existent endNode
+        pathList = new LinkedList<>();
+        path = PathFinding.dijkstra(list, "55N", "55X", pathList);
+        assertEquals(Integer.MAX_VALUE, path);
+        expectedPathList = new LinkedList<>();
+        assertEquals(expectedPathList, pathList);
+
+        //Non existent start and end Nodes
+        pathList = new LinkedList<>();
+        path = PathFinding.dijkstra(list, "55Z", "55Y", pathList);
+        assertEquals(Integer.MAX_VALUE, path);
+        expectedPathList = new LinkedList<>();
+        assertEquals(expectedPathList, pathList);
+
         //Normal cases
         pathList = new LinkedList<>();
         path = PathFinding.dijkstra(list, "55T", "55C", pathList);

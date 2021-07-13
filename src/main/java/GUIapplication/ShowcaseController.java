@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 
 import javafx.event.ActionEvent;
 
+import javax.swing.*;
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -20,13 +21,13 @@ public class ShowcaseController implements Initializable {
     @FXML
     private TextField cellCount;
     @FXML
-    private ToggleGroup terrainTypeToggleGroup;
+    private ToggleGroup terrainTypeToggleGroup, algorithmsToggleGroup;
     @FXML
-    private RadioButton clearRB, obstacleRB;
+    private RadioButton clearRB, obstacleRB, dijkstraRB;
 
     private GraphicsContext gc;
     private Grid grid;
-    private int terrainType, cellSideLength;
+    private int terrainType, algorithmUsed, cellSideLength;
 
     private int drawGrid(int cellCount) {
         //No graphicsContext assigned to draw
@@ -57,6 +58,16 @@ public class ShowcaseController implements Initializable {
 
     }
 
+    @FXML
+    public void handleRunButtonAction(ActionEvent event) {
+        switch (algorithmUsed) {
+            case 0:
+
+                break;
+        }
+
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         //Initializing FXML variables for drawing with initial values
@@ -72,10 +83,15 @@ public class ShowcaseController implements Initializable {
         drawGrid(Integer.parseInt(cellCount.getText()));
 
         //terrainToggleButtons configuration
-        clearRB.setUserData("0");
-        obstacleRB.setUserData("1");
+        clearRB.setUserData("1");
+        obstacleRB.setUserData("0");
 
         terrainType = Integer.parseInt((String) terrainTypeToggleGroup.getSelectedToggle().getUserData());
+
+        //Algorithm to be used configuration
+        dijkstraRB.setUserData("0");
+
+        algorithmUsed = Integer.parseInt((String) algorithmsToggleGroup.getSelectedToggle().getUserData());
 
 
         //Listens to changes in grid drawing selection/deselection radio buttons
@@ -83,13 +99,22 @@ public class ShowcaseController implements Initializable {
                 (observableValue, toggle, t1) -> {
                     if (terrainTypeToggleGroup.getSelectedToggle() != null) {
                         terrainType = Integer.parseInt((String) terrainTypeToggleGroup.getSelectedToggle().getUserData());
-                        if (terrainType == 0)
+                        if (terrainType == 1)
                             gc.setFill(Color.WHITE);
                         else
                             gc.setFill(Color.BLACK);
                     }
                 }
         );
+        //Listens to changes in algorithmsToggleGroup
+        algorithmsToggleGroup.selectedToggleProperty().addListener(
+                (observableValue, toggle, t1) -> {
+                    if (algorithmsToggleGroup.getSelectedToggle() != null) {
+                        algorithmUsed = Integer.parseInt((String) algorithmsToggleGroup.getSelectedToggle().getUserData());
+                    }
+                }
+        );
+
 
         //Method call needed for mouse dragging
         mainCanvas.setOnDragDetected(mouseEvent -> mainCanvas.startFullDrag());
@@ -102,8 +127,11 @@ public class ShowcaseController implements Initializable {
             normY = (int) mouseDragEvent.getY() / cellSideLength;
 
             grid.addGridElement(terrainType, normX, normY);
-            gc.fillRect(normX * (cellSideLength - 1) + normX, normY * (cellSideLength - 1) + normY,
-                    cellSideLength - 1, cellSideLength - 1);
+
+            //**** Might fail when grid has lots of cells ****
+            gc.fillRect((normX * cellSideLength + 0.5f),
+                    (normY * cellSideLength + 0.5f),
+                    cellSideLength - 1f, cellSideLength - 1f);
         });
     }
 }

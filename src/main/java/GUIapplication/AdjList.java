@@ -58,7 +58,8 @@ public class AdjList {
      * */
     public Pair[] getNeighbors(String vertex) {
         if (adj.get(vertex) == null)
-            return null;
+            return new Pair[0];
+        //            return null;
         return adj.get(vertex).toArray(new Pair[0]);
     }
 

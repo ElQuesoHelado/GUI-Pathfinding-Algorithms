@@ -184,4 +184,72 @@ class GridTest {
     @Test
     void draw() {
     }
+
+    @Test
+    void generateAdjList() {
+        Grid grid = new Grid(gc, 6, 4);
+        grid.addGridElement(2, 2, 0);
+        grid.addGridElement(0, 5, 0);
+        grid.addGridElement(2, 1, 1);
+        grid.addGridElement(0, 2, 1);
+        grid.addGridElement(2, 4, 1);
+        grid.addGridElement(0, 5, 1);
+        grid.addGridElement(1, 0, 2);
+        grid.addGridElement(0, 1, 2);
+        grid.addGridElement(0, 2, 2);
+        grid.addGridElement(3, 3, 2);
+        grid.addGridElement(0, 4, 2);
+        grid.addGridElement(0, 4, 2);
+        grid.addGridElement(5, 0, 3);
+        grid.addGridElement(3, 1, 3);
+        grid.addGridElement(2, 3, 3);
+
+        AdjList list = grid.generateAdjList();
+        AdjList expectedList = new AdjList();
+        expectedList.processEdgeListFile("test/java/GUIapplication/gridTestGraph.txt");
+        assertTrue(Arrays.asList(expectedList.getNeighbors("0-0"))
+                .containsAll(Arrays.asList(list.getNeighbors("0-0"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("1-0")).
+                containsAll(Arrays.asList(list.getNeighbors("1-0"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("2-0")).
+                containsAll(Arrays.asList(list.getNeighbors("2-0"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("3-0")).
+                containsAll(Arrays.asList(list.getNeighbors("3-0"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("4-0")).
+                containsAll(Arrays.asList(list.getNeighbors("4-0"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("0-1")).
+                containsAll(Arrays.asList(list.getNeighbors("0-1"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("1-1")).
+                containsAll(Arrays.asList(list.getNeighbors("1-1"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("3-1")).
+                containsAll(Arrays.asList(list.getNeighbors("3-1"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("4-1")).
+                containsAll(Arrays.asList(list.getNeighbors("4-1"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("0-2")).
+                containsAll(Arrays.asList(list.getNeighbors("0-2"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("3-2")).
+                containsAll(Arrays.asList(list.getNeighbors("3-2"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("5-2")).
+                containsAll(Arrays.asList(list.getNeighbors("5-2"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("0-3")).
+                containsAll(Arrays.asList(list.getNeighbors("0-3"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("1-3")).
+                containsAll(Arrays.asList(list.getNeighbors("1-3"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("2-3")).
+                containsAll(Arrays.asList(list.getNeighbors("2-3"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("3-3")).
+                containsAll(Arrays.asList(list.getNeighbors("3-3"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("4-3")).
+                containsAll(Arrays.asList(list.getNeighbors("4-3"))));
+        assertTrue(Arrays.asList(expectedList.getNeighbors("5-3")).
+                containsAll(Arrays.asList(list.getNeighbors("5-3"))));
+    }
+
+    @Test
+    void findPath() {
+        Grid grid = new Grid(gc, 6, 4);
+        grid.setPathfindingMethod(0);
+
+
+    }
 }
