@@ -18,12 +18,16 @@ public class Grid {
     private int pathfindingMethod = 0;
     private int cellSideLength;
 
-    private String startNode = "0-0", endNode = "0-0";
+    //    private String startNode = "0-0", endNode = "0-0";
+    private int[] startNode, endNode;
 
     public Grid(GraphicsContext _gc, int x, int y) {
         if (x < 1 || y < 1)
             throw new IllegalArgumentException("Grid can't be of negative dimensions");
         gc = _gc;
+//        startNode = new int[2]{0};
+        startNode = new int[]{0, 0};
+        endNode = new int[]{x - 1, y - 1};
         innerGrid = new ArrayList<ArrayList<Integer>>(y);
         for (int i = 0; i < y; ++i) {
             innerGrid.add(new ArrayList<Integer>(x));
@@ -37,11 +41,21 @@ public class Grid {
     }
 
     public void setStartNode(int startNodeX, int startNodeY) {
-        this.startNode = startNodeX + "-" + startNodeY;
+        this.startNode[0] = startNodeX;
+        this.startNode[1] = startNodeY;
     }
 
     public void setEndNode(int endNodeX, int endNodeY) {
-        this.endNode = endNodeX + "-" + endNodeY;
+        this.endNode[0] = endNodeX;
+        this.endNode[1] = endNodeY;
+    }
+
+    public int[] getStartNode() {
+        return startNode;
+    }
+
+    public int[] getEndNode() {
+        return endNode;
     }
 
     public void setPathfindingMethod(int pathfindingMethod) {
@@ -152,7 +166,8 @@ public class Grid {
     public int findPath() {
         switch (pathfindingMethod) {
             case 0:
-                return PathFinding.dijkstraStepsGrid(generateAdjList(), startNode, endNode, gc, cellSideLength);
+                return PathFinding.dijkstraStepsGrid(generateAdjList(), startNode[0] + "-" + startNode[1],
+                        endNode[0] + "-" + endNode[1], gc, cellSideLength);
         }
         return Integer.MAX_VALUE;
     }
