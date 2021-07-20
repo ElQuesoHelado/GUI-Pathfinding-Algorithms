@@ -12,31 +12,30 @@ import java.util.ArrayList;
  * Values greater or equal to 1 represent a passable cell
  * */
 public class Grid {
-    public ArrayList<ArrayList<Integer>> innerGrid;
+    public ArrayList<ArrayList<Integer>> innerArray;
 
-    private GraphicsContext gc;
-    private int pathfindingMethod = 0;
-    private int cellSideLength;
+    private GraphicsContext checkedNodesGC, shortestPathGC;
+    private double cellSideLength;
 
-    //    private String startNode = "0-0", endNode = "0-0";
     private int[] startNode, endNode;
 
-    public Grid(GraphicsContext _gc, int x, int y) {
+    public Grid(GraphicsContext checkedNodesGC, GraphicsContext shortestPathGC, int x, int y) {
         if (x < 1 || y < 1)
-            throw new IllegalArgumentException("Grid can't be of negative dimensions");
-        gc = _gc;
-//        startNode = new int[2]{0};
+            throw new IllegalArgumentException("Grid can't be of negative or zero dimension");
+        this.checkedNodesGC = checkedNodesGC;
+        this.shortestPathGC = shortestPathGC;
+
         startNode = new int[]{0, 0};
         endNode = new int[]{x - 1, y - 1};
-        innerGrid = new ArrayList<ArrayList<Integer>>(y);
+        innerArray = new ArrayList<ArrayList<Integer>>(y);
         for (int i = 0; i < y; ++i) {
-            innerGrid.add(new ArrayList<Integer>(x));
+            innerArray.add(new ArrayList<Integer>(x));
             for (int j = 0; j < x; ++j)
-                innerGrid.get(i).add(1);
+                innerArray.get(i).add(1);
         }
     }
 
-    public void setCellSideLength(int cellSideLength) {
+    public void setCellSideLength(double cellSideLength) {
         this.cellSideLength = cellSideLength;
     }
 
@@ -58,15 +57,11 @@ public class Grid {
         return endNode;
     }
 
-    public void setPathfindingMethod(int pathfindingMethod) {
-        this.pathfindingMethod = pathfindingMethod;
-    }
-
     /*
      * Adds element to innerGrid in position x,y
      */
     public void addGridElement(int value, int x, int y) {
-        innerGrid.get(y).set(x, value);
+        innerArray.get(y).set(x, value);
     }
 
     /*
@@ -76,20 +71,20 @@ public class Grid {
         if (x < 1 || y < 1)
             throw new IllegalArgumentException("Grid can't be of negative dimensions");
 
-        int initialX = innerGrid.get(0).size(),
-                initialY = innerGrid.size(), rowsToResizeIndexY;
+        int initialX = innerArray.get(0).size(),
+                initialY = innerArray.size(), rowsToResizeIndexY;
 
         // Shrinking in height/y
         if (initialY > y) {
-            innerGrid.subList(y, initialY).clear();
-            innerGrid.trimToSize();
+            innerArray.subList(y, initialY).clear();
+            innerArray.trimToSize();
             rowsToResizeIndexY = y;
         } else {// Expanding & same size , uses new width to create new rows
-            innerGrid.ensureCapacity(y);
+            innerArray.ensureCapacity(y);
             for (int i = initialY; i < y; i++) {
-                innerGrid.add(new ArrayList<Integer>(x));
+                innerArray.add(new ArrayList<Integer>(x));
                 for (int j = 0; j < x; ++j)
-                    innerGrid.get(i).add(1);
+                    innerArray.get(i).add(1);
             }
             rowsToResizeIndexY = initialY;
         }
@@ -100,14 +95,14 @@ public class Grid {
         //Shrinking in width/x
         if (initialX > x) {
             for (int i = 0; i < rowsToResizeIndexY; i++) {
-                innerGrid.get(i).subList(x, initialX).clear();
-                innerGrid.trimToSize();
+                innerArray.get(i).subList(x, initialX).clear();
+                innerArray.trimToSize();
             }
         } else { //Expanding each row
             for (int i = 0; i < rowsToResizeIndexY; i++) {
-                innerGrid.get(i).ensureCapacity(x);
+                innerArray.get(i).ensureCapacity(x);
                 for (int j = 0; j < x - initialX; ++j)
-                    innerGrid.get(i).add(1);
+                    innerArray.get(i).add(1);
             }
         }
     }
@@ -116,11 +111,11 @@ public class Grid {
      * Fills entire array with default value : 1
      * */
     public boolean clearGrid() {
-        if (innerGrid.size() < 1 || innerGrid.get(0).size() < 1)
+        if (innerArray.size() < 1 || innerArray.get(0).size() < 1)
             return false;
-        for (int i = 0; i < innerGrid.size(); ++i) {
-            for (int j = 0; j < innerGrid.get(0).size(); ++j)
-                innerGrid.get(i).set(j, 1);
+        for (int i = 0; i < innerArray.size(); ++i) {
+            for (int j = 0; j < innerArray.get(0).size(); ++j)
+                innerArray.get(i).set(j, 1);
         }
         return true;
     }
@@ -133,41 +128,41 @@ public class Grid {
      * */
     public AdjList generateAdjList() {
         AdjList adj = new AdjList();
-        for (int y = 0; y < innerGrid.size(); ++y) {
-            for (int x = 0; x < innerGrid.get(0).size(); ++x) {
+        for (int y = 0; y < innerArray.size(); ++y) {
+            for (int x = 0; x < innerArray.get(0).size(); ++x) {
                 String currentNode = x + "-" + y;
-                if (innerGrid.get(y).get(x) > 0) {
+                if (innerArray.get(y).get(x) > 0) {
                     if (y - 1 > 0) {
-                        if (x - 1 > 0 && innerGrid.get(y - 1).get(x - 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x - 1) + "-" + (y - 1), innerGrid.get(y - 1).get(x - 1));
-                        if (x + 1 < innerGrid.get(0).size() && innerGrid.get(y - 1).get(x + 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x + 1) + "-" + (y - 1), innerGrid.get(y - 1).get(x + 1));
-                        if (innerGrid.get(y - 1).get(x) != 0)
-                            adj.addDirectedEdge(currentNode, x + "-" + (y - 1), innerGrid.get(y - 1).get(x));
+                        if (x - 1 > 0 && innerArray.get(y - 1).get(x - 1) != 0)
+                            adj.addDirectedEdge(currentNode, (x - 1) + "-" + (y - 1), innerArray.get(y - 1).get(x - 1));
+                        if (x + 1 < innerArray.get(0).size() && innerArray.get(y - 1).get(x + 1) != 0)
+                            adj.addDirectedEdge(currentNode, (x + 1) + "-" + (y - 1), innerArray.get(y - 1).get(x + 1));
+                        if (innerArray.get(y - 1).get(x) != 0)
+                            adj.addDirectedEdge(currentNode, x + "-" + (y - 1), innerArray.get(y - 1).get(x));
                     }
-                    if (y + 1 < innerGrid.size()) {
-                        if (x - 1 > 0 && innerGrid.get(y + 1).get(x - 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x - 1) + "-" + (y + 1), innerGrid.get(y + 1).get(x - 1));
-                        if (x + 1 < innerGrid.get(0).size() && innerGrid.get(y + 1).get(x + 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x + 1) + "-" + (y + 1), innerGrid.get(y + 1).get(x + 1));
-                        if (innerGrid.get(y + 1).get(x) != 0)
-                            adj.addDirectedEdge(currentNode, x + "-" + (y + 1), innerGrid.get(y + 1).get(x));
+                    if (y + 1 < innerArray.size()) {
+                        if (x - 1 > 0 && innerArray.get(y + 1).get(x - 1) != 0)
+                            adj.addDirectedEdge(currentNode, (x - 1) + "-" + (y + 1), innerArray.get(y + 1).get(x - 1));
+                        if (x + 1 < innerArray.get(0).size() && innerArray.get(y + 1).get(x + 1) != 0)
+                            adj.addDirectedEdge(currentNode, (x + 1) + "-" + (y + 1), innerArray.get(y + 1).get(x + 1));
+                        if (innerArray.get(y + 1).get(x) != 0)
+                            adj.addDirectedEdge(currentNode, x + "-" + (y + 1), innerArray.get(y + 1).get(x));
                     }
-                    if (x - 1 > 0 && innerGrid.get(y).get(x - 1) != 0)
-                        adj.addDirectedEdge(currentNode, (x - 1) + "-" + y, innerGrid.get(y).get(x - 1));
-                    if (x + 1 < innerGrid.get(0).size() && innerGrid.get(y).get(x + 1) != 0)
-                        adj.addDirectedEdge(currentNode, (x + 1) + "-" + y, innerGrid.get(y).get(x + 1));
+                    if (x - 1 > 0 && innerArray.get(y).get(x - 1) != 0)
+                        adj.addDirectedEdge(currentNode, (x - 1) + "-" + y, innerArray.get(y).get(x - 1));
+                    if (x + 1 < innerArray.get(0).size() && innerArray.get(y).get(x + 1) != 0)
+                        adj.addDirectedEdge(currentNode, (x + 1) + "-" + y, innerArray.get(y).get(x + 1));
                 }
             }
         }
         return adj;
     }
 
-    public int findPath() {
+    public int findPath(int pathfindingMethod) {
         switch (pathfindingMethod) {
             case 0:
                 return PathFinding.dijkstraStepsGrid(generateAdjList(), startNode[0] + "-" + startNode[1],
-                        endNode[0] + "-" + endNode[1], gc, cellSideLength);
+                        endNode[0] + "-" + endNode[1], checkedNodesGC, shortestPathGC, cellSideLength);
         }
         return Integer.MAX_VALUE;
     }

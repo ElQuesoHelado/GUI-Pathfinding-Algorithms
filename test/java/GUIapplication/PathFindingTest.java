@@ -18,6 +18,14 @@ class PathFindingTest {
         LinkedList<String> expectedPathList;
         int path;
 
+        //null AdjList
+        pathList = new LinkedList<>();
+        path = PathFinding.dijkstra(null, "55I", "55I", pathList);
+        assertEquals(Integer.MAX_VALUE, path);
+        expectedPathList = new LinkedList<>();
+        assertEquals(expectedPathList, pathList);
+
+
         //Same startNode as endNode
         pathList = new LinkedList<>();
         path = PathFinding.dijkstra(list, "55I", "55I", pathList);

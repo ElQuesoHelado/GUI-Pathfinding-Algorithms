@@ -1,7 +1,6 @@
 package GUIapplication;
 
 import javafx.scene.canvas.GraphicsContext;
-import GUIapplication.Grid;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -24,7 +23,7 @@ class GridTest {
 
     @Test
     void addGridElement() {
-        Grid grid = new Grid(gc, 4, 7);
+        Grid grid = new Grid(gc, gc, 4, 7);
 
         ArrayList<ArrayList<Integer>> array = new ArrayList<>(7);
 
@@ -50,13 +49,13 @@ class GridTest {
         grid.addGridElement(1, 1, 6);
         grid.addGridElement(1, 3, 6);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
     }
 
     @Test
     void resize() {
         //Testing shrinking
-        Grid grid = new Grid(gc, 16, 5);
+        Grid grid = new Grid(gc, gc, 16, 5);
         grid.addGridElement(1, 0, 0);
         grid.addGridElement(1, 15, 4);
         grid.addGridElement(1, 8, 0);
@@ -79,7 +78,7 @@ class GridTest {
 
         grid.resize(10, 2);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
 
         //Testing expansion
         array = getZeroedArrayList(10, 17);
@@ -107,14 +106,14 @@ class GridTest {
         grid.addGridElement(1, 0, 11);
         grid.addGridElement(1, 6, 11);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
 
         grid.resize(10, 17);
 
         array.get(5).set(1, 1);
         grid.addGridElement(1, 1, 5);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
 
         grid.resize(25, 17);
 
@@ -144,12 +143,12 @@ class GridTest {
         grid.addGridElement(1, 10, 10);
         grid.addGridElement(1, 21, 0);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
     }
 
     @Test
     void clearGrid() {
-        Grid grid = new Grid(gc, 20, 20);
+        Grid grid = new Grid(gc, gc, 20, 20);
 
         grid.addGridElement(1, 0, 2);
         grid.addGridElement(1, 13, 2);
@@ -162,9 +161,9 @@ class GridTest {
 
         ArrayList<ArrayList<Integer>> array = getZeroedArrayList(20, 20);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
 
-        grid = new Grid(gc, 10, 80);
+        grid = new Grid(gc, gc, 10, 80);
         grid.addGridElement(1, 0, 0);
         grid.addGridElement(1, 2, 2);
         grid.addGridElement(1, 4, 19);
@@ -178,7 +177,7 @@ class GridTest {
 
         array = getZeroedArrayList(10, 80);
 
-        assertEquals(array, grid.innerGrid);
+        assertEquals(array, grid.innerArray);
     }
 
     @Test
@@ -187,7 +186,7 @@ class GridTest {
 
     @Test
     void generateAdjList() {
-        Grid grid = new Grid(gc, 6, 4);
+        Grid grid = new Grid(gc, gc, 6, 4);
         grid.addGridElement(2, 2, 0);
         grid.addGridElement(0, 5, 0);
         grid.addGridElement(2, 1, 1);
@@ -243,13 +242,5 @@ class GridTest {
                 containsAll(Arrays.asList(list.getNeighbors("4-3"))));
         assertTrue(Arrays.asList(expectedList.getNeighbors("5-3")).
                 containsAll(Arrays.asList(list.getNeighbors("5-3"))));
-    }
-
-    @Test
-    void findPath() {
-        Grid grid = new Grid(gc, 6, 4);
-        grid.setPathfindingMethod(0);
-
-
     }
 }

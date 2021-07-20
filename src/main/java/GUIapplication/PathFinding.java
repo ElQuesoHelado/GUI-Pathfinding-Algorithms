@@ -1,7 +1,12 @@
 package GUIapplication;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import javafx.util.Pair;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,6 +65,15 @@ public final class PathFinding {
      * Returns the shortest path between startNode and endNode and the vertex sequence path between them
      * */
     public static int dijkstra(AdjList adjList, String startNode, String endNode, LinkedList<String> pathList) {
+        //Valid AdjList
+        if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
+            return Integer.MAX_VALUE;
+
+        //Checks if graph is suitable for BFS
+        if (!adjList.isWeighted())
+            return Integer.MAX_VALUE;//**************************************************
+
+
         //Hashtable used to store minimal distance from startNode
         HashMap<String, Integer> d = new HashMap<>(adjList.size());
         //Priority queue for storing current shortest path
@@ -120,8 +134,13 @@ public final class PathFinding {
         return Integer.MAX_VALUE;
     }
 
-    public static int dijkstraStepsGrid(AdjList adjList, String startNode, String endNode, GraphicsContext gc,
-                                        int cellSideLength) {
+    public static int dijkstraStepsGrid(AdjList adjList, String startNode, String endNode,
+                                        GraphicsContext checkedNodesGC, GraphicsContext shortestPathGC,
+                                        double cellSideLength) {
+        //Valid AdjList
+        if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
+            return Integer.MAX_VALUE;
+
         //Hashtable used to store minimal distance from startNode
         HashMap<String, Integer> d = new HashMap<>(adjList.size());
         //Priority queue for storing current shortest path
@@ -143,22 +162,69 @@ public final class PathFinding {
 
         //Helper variables
         Pair<String, Integer>[] neighbors;//Array of pairs <neighborKey, edgeWeight>
-        String u, //Current Node with shortest path / top of min-queue
-                neighbor;
+        String u, neighbor; //Current Node with shortest path / top of min-queue
+
         String[] nodeCoords;
-        int edgeWeight;
+        int edgeWeight, time = 0, speed = 300;
+
+        Timeline timeline = new Timeline();
         while (q.size() != 0) {
             u = q.poll().getValue();
             nodeCoords = u.split("-");
-            gc.setFill(Color.PALEGREEN);
-            gc.fillRect(Integer.parseInt(nodeCoords[0]) * cellSideLength + 0.5f,
-                    Integer.parseInt(nodeCoords[1]) * cellSideLength + 0.5f,
-                    cellSideLength - 1f, cellSideLength - 1f);
+
+            //Marks node as checked an saves a keyframe
+            String[] finalNodeCoords1 = nodeCoords;
+            KeyFrame kf1 = new KeyFrame(Duration.millis(time), actionEvent -> {
+                checkedNodesGC.setFill(Color.VIOLET);
+                checkedNodesGC.fillRect(Integer.parseInt(finalNodeCoords1[0]) * cellSideLength + 0.5f,
+                        Integer.parseInt(finalNodeCoords1[1]) * cellSideLength + 0.5f,
+                        cellSideLength - 1f, cellSideLength - 1f);
+
+
+            });
+            timeline.getKeyFrames().add(kf1);
+            time += speed;
+
+            //Draws current shortest path and saves its keyframe
+            String finalU = u;
+            KeyFrame kf2 = new KeyFrame(Duration.millis(time), actionEvent -> {
+                //Clears past path
+                shortestPathGC.clearRect(0, 0,
+                        shortestPathGC.getCanvas().getWidth(), shortestPathGC.getCanvas().getHeight());
+
+                String current = finalU;
+                String[] coords;
+                int[] prev = new int[2], curr = new int[2];
+                prev[0] = Integer.parseInt(finalNodeCoords1[0]);
+                prev[1] = Integer.parseInt(finalNodeCoords1[1]);
+
+                while ((current = previousVertexes.get(current)) != null) {
+                    coords = current.split("-");
+                    curr[0] = Integer.parseInt(coords[0]);
+                    curr[1] = Integer.parseInt(coords[1]);
+
+                    shortestPathGC.strokeLine(prev[0] * cellSideLength + cellSideLength / 2,
+                            prev[1] * cellSideLength + cellSideLength / 2,
+                            curr[0] * cellSideLength + cellSideLength / 2,
+                            curr[1] * cellSideLength + cellSideLength / 2);
+
+                    prev[0] = curr[0];
+                    prev[1] = curr[1];
+                }
+
+
+            });
+            timeline.getKeyFrames().add(kf2);
+            time += speed;
 
             neighbors = adjList.getNeighbors(u);
-            for (Pair<String, Integer> neighborKeyValuePair : neighbors) {//Loops through every neighbor
-                neighbor = neighborKeyValuePair.getKey();
-                edgeWeight = neighborKeyValuePair.getValue();
+
+            int relaxedCounter = 0;
+            for (int i = 0; i < neighbors.length; ++i) {
+                neighbor = neighbors[i].getKey();
+                edgeWeight = neighbors[i].getValue();
+
+
                 //Relaxation step
                 //Checks if distance to neighbor node is less than the min distance already found
                 //Checks if distance to current node is infinite, to avoid overflow
@@ -167,6 +233,23 @@ public final class PathFinding {
                     q.remove(new Entry(d.get(neighbor), neighbor));//Removes and adds to prompt a min-queue restructure
                     q.add(new Entry(d.get(u) + edgeWeight, neighbor));
 
+
+                    nodeCoords = neighbor.split("-");
+                    String[] finalNodeCoords = nodeCoords;
+                    KeyFrame kf = new KeyFrame(Duration.millis(time + relaxedCounter), actionEvent -> {
+                        checkedNodesGC.setFill(Color.PALEGREEN);
+                        checkedNodesGC.fillRect(Integer.parseInt(finalNodeCoords[0]) * cellSideLength + 0.5f,
+                                Integer.parseInt(finalNodeCoords[1]) * cellSideLength + 0.5f,
+                                cellSideLength - 1f, cellSideLength - 1f);
+
+
+                    });
+
+
+                    timeline.getKeyFrames().add(kf);
+                    relaxedCounter += speed;
+
+
                     //Assign shorter path found to neighbor in out array
                     d.put(neighbor, d.get(u) + edgeWeight);
 
@@ -174,13 +257,15 @@ public final class PathFinding {
                     previousVertexes.put(neighbor, u);
                 }
             }
+            time += relaxedCounter;
+
 
             //endNode found
             if (Objects.equals(u, endNode)) {
                 //Color grid to found
+                timeline.play();
                 return d.get(u);
             }
-
         }
         return Integer.MAX_VALUE;
     }

@@ -20,6 +20,7 @@ import java.util.Set;
  * */
 public class AdjList {
     private Map<String, LinkedList<Pair<String, Integer>>> adj;
+    private boolean isWeighted = false, hasNegativeEdges = false;
 
     AdjList() {
         adj = new HashMap<>();
@@ -30,6 +31,20 @@ public class AdjList {
      * */
     public boolean isEmpty() {
         return adj.isEmpty();
+    }
+
+    /*
+     * Method for checking if graph is weighted
+     * */
+    public boolean isWeighted() {
+        return isWeighted;
+    }
+
+    /*
+     * Method for checking if graph has at least one negative edge
+     * */
+    public boolean hasNegativeEdges() {
+        return hasNegativeEdges;
     }
 
     /*
@@ -74,6 +89,10 @@ public class AdjList {
      * Adds both vertex1 and vertex2 to the HashMap and a directed edge in that direction
      * */
     public void addDirectedEdge(String vertex1, String vertex2, Integer edgeValue) {
+        if (edgeValue < 0)
+            hasNegativeEdges = true;
+        if (edgeValue > 1)
+            isWeighted = true;
         adj.putIfAbsent(vertex1, new LinkedList<>());
         adj.putIfAbsent(vertex2, new LinkedList<>());
         adj.get(vertex1).add(new Pair<>(vertex2, edgeValue));
@@ -83,6 +102,10 @@ public class AdjList {
      * Adds both vertex1 and vertex2 to the HashMap and a bidirectional edge between them
      * */
     public void addBidirectionalEdge(String vertex1, String vertex2, Integer edgeValue) {
+        if (edgeValue < 0)
+            hasNegativeEdges = true;
+        if (edgeValue > 1)
+            isWeighted = true;
         adj.putIfAbsent(vertex1, new LinkedList<>());
         adj.putIfAbsent(vertex2, new LinkedList<>());
         adj.get(vertex1).add(new Pair<>(vertex2, edgeValue));
