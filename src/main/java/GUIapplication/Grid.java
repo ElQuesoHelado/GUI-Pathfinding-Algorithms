@@ -158,15 +158,6 @@ public class Grid {
         return adj;
     }
 
-    public int findPath(int pathfindingMethod) {
-        switch (pathfindingMethod) {
-            case 0:
-                return PathFinding.dijkstraStepsGrid(generateAdjList(), startNode[0] + "-" + startNode[1],
-                        endNode[0] + "-" + endNode[1], checkedNodesGC, shortestPathGC, cellSideLength);
-        }
-        return Integer.MAX_VALUE;
-    }
-
     public void draw() {
 
     }

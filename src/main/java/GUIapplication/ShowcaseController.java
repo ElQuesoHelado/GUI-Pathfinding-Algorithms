@@ -1,5 +1,8 @@
 package GUIapplication;
 
+import javafx.concurrent.Task;
+import javafx.concurrent.WorkerStateEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
@@ -13,7 +16,6 @@ import javafx.scene.paint.Paint;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-import javax.swing.*;
 import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
@@ -36,6 +38,7 @@ public class ShowcaseController implements Initializable {
     private Grid grid;
     private int terrainType, algorithmUsed, nodeTypeToSelect, cellCount;
     private double cellSideLength, canvasWidth, canvasHeight;
+    private Task<Integer> pathfindingTask;
 
     private final Pattern validCellCount = Pattern.compile("^([2-9]|[1-9][0-9]|[1][0][0])$");
 
@@ -273,17 +276,51 @@ public class ShowcaseController implements Initializable {
 
     @FXML
     public void handleRunButtonAction(ActionEvent event) {
-//        disableInputs();
+        disableInputs();
         stopButton.setDisable(false);
-        infoLabel.setText("Shortest path: " + Integer.toString(grid.findPath(algorithmUsed)));
-        lockClickCanvas.toFront();
-//        stopButton.setDisable(true);
-//        enableInputs();
+//        infoLabel.setText("Shortest path: " + grid.findPath(algorithmUsed));
+
+
+        switch (algorithmUsed) {
+            default:
+                pathfindingTask = new PathFinding.DijkstraStepsTask(grid.generateAdjList(),
+                        grid.getStartNode()[0] + "-" + grid.getStartNode()[1],
+                        grid.getEndNode()[0] + "-" + grid.getEndNode()[1],
+                        checkedNodesGC, shortestPathGC, cellSideLength);
+                break;
+        }
+
+        pathfindingTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent workerStateEvent) {
+                Integer result = pathfindingTask.getValue();
+                infoLabel.setText("Shortest path: " + result);
+                lockClickCanvas.toFront();
+                stopButton.setDisable(true);
+                enableInputs();
+            }
+        });
+
+        pathfindingTask.setOnCancelled(new EventHandler<WorkerStateEvent>() {
+            @Override
+            public void handle(WorkerStateEvent workerStateEvent) {
+                Integer result = pathfindingTask.getValue();
+                infoLabel.setText("CANCELED");
+                lockClickCanvas.toFront();
+                stopButton.setDisable(true);
+                enableInputs();
+            }
+        });
+
+
+        Thread t = new Thread(pathfindingTask);
+        t.start();
+
     }
 
     @FXML
     public void handleStopButton(ActionEvent event) {
-
+        pathfindingTask.cancel();
     }
 
     @FXML
