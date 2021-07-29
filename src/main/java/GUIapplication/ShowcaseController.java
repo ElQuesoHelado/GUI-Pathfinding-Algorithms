@@ -1,5 +1,7 @@
 package GUIapplication;
 
+import javafx.application.ConditionalFeature;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
@@ -8,6 +10,9 @@ import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 
@@ -17,6 +22,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.net.URL;
+import java.nio.IntBuffer;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
@@ -284,8 +290,8 @@ public class ShowcaseController implements Initializable {
         switch (algorithmUsed) {
             default:
                 pathfindingTask = new PathFinding.DijkstraStepsTask(grid.generateAdjList(),
-                        grid.getStartNode()[0] + "-" + grid.getStartNode()[1],
-                        grid.getEndNode()[0] + "-" + grid.getEndNode()[1],
+                        grid.getStartNode()[0] << 16 | grid.getStartNode()[1],
+                        grid.getEndNode()[0] << 16 | grid.getEndNode()[1],
                         checkedNodesGC, shortestPathGC, cellSideLength);
                 break;
         }
@@ -312,10 +318,8 @@ public class ShowcaseController implements Initializable {
             }
         });
 
-
         Thread t = new Thread(pathfindingTask);
         t.start();
-
     }
 
     @FXML
@@ -360,6 +364,20 @@ public class ShowcaseController implements Initializable {
 
         //First Grid draw with default values
         drawGrid();
+
+
+        //**********************
+//        int[] buffer = new int[650 * 650];
+//        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance();
+//
+//        DrawBufferShapes.drawLine(110, 50, 175, 115,
+//                10, 0xFFFF0000, buffer, 650);
+////        DrawBufferShapes.drawSquare(50.123, 300, 2, 0xFFFF0000, buffer, 650);
+//
+//
+//        PixelWriter p = shortestPathGC.getPixelWriter();
+//        p.setPixels(0, 0, 650, 650, pixelFormat, buffer, 0, 650);
+        //***********************
 
         grid = new Grid(checkedNodesGC, shortestPathGC, cellCount, cellCount);
         grid.setCellSideLength(cellSideLength);

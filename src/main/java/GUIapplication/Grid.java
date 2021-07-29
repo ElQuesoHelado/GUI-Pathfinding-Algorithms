@@ -10,6 +10,7 @@ import java.util.ArrayList;
  * Contains an innerGrid array that represents the drawn grid
  * Values of 0 represent an impassable cell
  * Values greater or equal to 1 represent a passable cell
+ * Start and end nodes have both X and Y coordinates compressed inside an integer
  * */
 public class Grid {
     public ArrayList<ArrayList<Integer>> innerArray;
@@ -17,20 +18,21 @@ public class Grid {
     private GraphicsContext checkedNodesGC, shortestPathGC;
     private double cellSideLength;
 
-    private int[] startNode, endNode;
+    private int startNode, endNode;
 
-    public Grid(GraphicsContext checkedNodesGC, GraphicsContext shortestPathGC, int x, int y) {
-        if (x < 1 || y < 1)
+    public Grid(GraphicsContext checkedNodesGC, GraphicsContext shortestPathGC, int width, int height) {
+        if (width < 1 || height < 1)
             throw new IllegalArgumentException("Grid can't be of negative or zero dimension");
         this.checkedNodesGC = checkedNodesGC;
         this.shortestPathGC = shortestPathGC;
 
-        startNode = new int[]{0, 0};
-        endNode = new int[]{x - 1, y - 1};
-        innerArray = new ArrayList<ArrayList<Integer>>(y);
-        for (int i = 0; i < y; ++i) {
-            innerArray.add(new ArrayList<Integer>(x));
-            for (int j = 0; j < x; ++j)
+        startNode = 0;
+        endNode = ((width - 1) << 16) | (height - 1);
+        cellSideLength = 10;
+        innerArray = new ArrayList<ArrayList<Integer>>(height);
+        for (int i = 0; i < height; ++i) {
+            innerArray.add(new ArrayList<Integer>(width));
+            for (int j = 0; j < width; ++j)
                 innerArray.get(i).add(1);
         }
     }
@@ -40,21 +42,19 @@ public class Grid {
     }
 
     public void setStartNode(int startNodeX, int startNodeY) {
-        this.startNode[0] = startNodeX;
-        this.startNode[1] = startNodeY;
+        startNode = startNodeX << 16 | startNodeY;
     }
 
     public void setEndNode(int endNodeX, int endNodeY) {
-        this.endNode[0] = endNodeX;
-        this.endNode[1] = endNodeY;
+        endNode = endNodeX << 16 | endNodeY;
     }
 
     public int[] getStartNode() {
-        return startNode;
+        return new int[]{startNode >> 16, startNode & 0x0000FFFF};
     }
 
     public int[] getEndNode() {
-        return endNode;
+        return new int[]{endNode >> 16, endNode & 0x0000FFFF};
     }
 
     /*
@@ -124,41 +124,45 @@ public class Grid {
      * Generates an Adjacency list from current innerGrid where
      * grid[x][y] == 0 -> Non passable obstacle
      * grid[x][y] == 1+ -> Normal path
-     * Nodes names consist of the strings of structure : CoordX-CoordY
+     * Nodes names consist of an integer where the first 2 bytes represent the X coordinate and the last ones the Y
      * */
     public AdjList generateAdjList() {
         AdjList adj = new AdjList();
         for (int y = 0; y < innerArray.size(); ++y) {
             for (int x = 0; x < innerArray.get(0).size(); ++x) {
-                String currentNode = x + "-" + y;
+                String currentNode = Integer.toString(x << 16 | y);
                 if (innerArray.get(y).get(x) > 0) {
                     if (y - 1 > 0) {
                         if (x - 1 > 0 && innerArray.get(y - 1).get(x - 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x - 1) + "-" + (y - 1), innerArray.get(y - 1).get(x - 1));
+                            adj.addDirectedEdge(currentNode, Integer.toString((x - 1) << 16 | (y - 1)),
+                                    innerArray.get(y - 1).get(x - 1));
                         if (x + 1 < innerArray.get(0).size() && innerArray.get(y - 1).get(x + 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x + 1) + "-" + (y - 1), innerArray.get(y - 1).get(x + 1));
+                            adj.addDirectedEdge(currentNode, Integer.toString((x + 1) << 16 | (y - 1)),
+                                    innerArray.get(y - 1).get(x + 1));
                         if (innerArray.get(y - 1).get(x) != 0)
-                            adj.addDirectedEdge(currentNode, x + "-" + (y - 1), innerArray.get(y - 1).get(x));
+                            adj.addDirectedEdge(currentNode, Integer.toString(x << 16 | (y - 1)),
+                                    innerArray.get(y - 1).get(x));
                     }
                     if (y + 1 < innerArray.size()) {
                         if (x - 1 > 0 && innerArray.get(y + 1).get(x - 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x - 1) + "-" + (y + 1), innerArray.get(y + 1).get(x - 1));
+                            adj.addDirectedEdge(currentNode, Integer.toString((x - 1) << 16 | (y + 1)),
+                                    innerArray.get(y + 1).get(x - 1));
                         if (x + 1 < innerArray.get(0).size() && innerArray.get(y + 1).get(x + 1) != 0)
-                            adj.addDirectedEdge(currentNode, (x + 1) + "-" + (y + 1), innerArray.get(y + 1).get(x + 1));
+                            adj.addDirectedEdge(currentNode, Integer.toString((x + 1) << 16 | (y + 1)),
+                                    innerArray.get(y + 1).get(x + 1));
                         if (innerArray.get(y + 1).get(x) != 0)
-                            adj.addDirectedEdge(currentNode, x + "-" + (y + 1), innerArray.get(y + 1).get(x));
+                            adj.addDirectedEdge(currentNode, Integer.toString(x << 16 | (y + 1)),
+                                    innerArray.get(y + 1).get(x));
                     }
                     if (x - 1 > 0 && innerArray.get(y).get(x - 1) != 0)
-                        adj.addDirectedEdge(currentNode, (x - 1) + "-" + y, innerArray.get(y).get(x - 1));
+                        adj.addDirectedEdge(currentNode, Integer.toString((x - 1) << 16 | y),
+                                innerArray.get(y).get(x - 1));
                     if (x + 1 < innerArray.get(0).size() && innerArray.get(y).get(x + 1) != 0)
-                        adj.addDirectedEdge(currentNode, (x + 1) + "-" + y, innerArray.get(y).get(x + 1));
+                        adj.addDirectedEdge(currentNode, Integer.toString((x + 1) << 16 | y),
+                                innerArray.get(y).get(x + 1));
                 }
             }
         }
         return adj;
-    }
-
-    public void draw() {
-
     }
 }
