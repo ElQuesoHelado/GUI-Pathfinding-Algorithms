@@ -1,4 +1,4 @@
-package GUIapplication;
+package com.jjac.pathfindinggui;
 
 import javafx.scene.canvas.GraphicsContext;
 import org.junit.jupiter.api.Test;

@@ -1,4 +1,4 @@
-package GUIapplication;
+package com.jjac.pathfindinggui;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -12,7 +12,6 @@ import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import javafx.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -39,7 +38,7 @@ class Entry implements Comparable<Entry> {
     }
 
     @Override
-    public int compareTo(@NotNull Entry other) {
+    public int compareTo(Entry other) {
         return Integer.compare(key, other.getKey());
     }
 
@@ -74,7 +73,7 @@ class IntegerEntry implements Comparable<IntegerEntry> {
     }
 
     @Override
-    public int compareTo(@NotNull IntegerEntry other) {
+    public int compareTo(IntegerEntry other) {
         return Integer.compare(this.key, other.getKey());
     }
 

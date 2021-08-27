@@ -1,4 +1,4 @@
-package GUIapplication;
+package com.jjac.pathfindinggui;
 
 public class DrawBufferShapes {
     private DrawBufferShapes() {

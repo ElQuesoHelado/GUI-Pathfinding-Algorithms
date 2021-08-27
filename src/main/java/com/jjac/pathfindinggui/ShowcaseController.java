@@ -1,4 +1,4 @@
-package GUIapplication;
+package com.jjac.pathfindinggui;
 
 import javafx.application.ConditionalFeature;
 import javafx.application.Platform;

@@ -1,8 +1,8 @@
-package GUIapplication;
+package com.jjac.pathfindinggui;
 
 import javafx.util.Pair;
-import GUIapplication.AdjList;
-import org.junit.jupiter.api.Test;
+//import GUIapplication.AdjList;
+import org.junit.jupiter.api .Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,7 +1,6 @@
-package GUIapplication;
+package com.jjac.pathfindinggui;
 
 import javafx.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -115,7 +114,7 @@ public class AdjList {
     /*
      * Wrapper for readAndAddBufferedReader that accepts a string containing an edge list
      * */
-    public void processEdgeListStr(@NotNull String edgeList) {
+    public void processEdgeListStr(String edgeList) {
         //Clear HashMap
         adj = new HashMap<>();
 
@@ -134,7 +133,7 @@ public class AdjList {
     /*
      * Wrapper for readAndAddBufferedReader that accepts a file path for a text file edge list
      * */
-    public void processEdgeListFile(@NotNull String edgeListPath) {
+    public void processEdgeListFile(String edgeListPath) {
         //Clear HashMap
         adj = new HashMap<>();
 
