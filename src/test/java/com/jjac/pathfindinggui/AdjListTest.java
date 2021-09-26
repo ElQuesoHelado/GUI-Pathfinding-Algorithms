@@ -1,12 +1,12 @@
 package com.jjac.pathfindinggui;
 
 import javafx.util.Pair;
-//import GUIapplication.AdjList;
-import org.junit.jupiter.api .Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.LinkedList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,20 +14,22 @@ class AdjListTest {
 
     @Test
     void addNode() {
-        AdjList list = new AdjList();
+        AdjList<String> list = new AdjList<>(String.class);
         list.addNode("NODE1");
         list.addNode("NODE2");
 
-        Pair<String, Integer>[] expectedNeighbors = new Pair[0];
+        LinkedList<Pair<Node<Integer, String>, Integer>> expectedNeighbors = new LinkedList<>();
 
-        assertArrayEquals(expectedNeighbors, list.getNeighbors("NODE1"));
-        assertArrayEquals(expectedNeighbors, list.getNeighbors("NODE2"));
-        assertArrayEquals(null, list.getNeighbors("NODE3"));
+        assertEquals(expectedNeighbors, list.getNeighbors("NODE1"));
+        assertEquals(expectedNeighbors, list.getNeighbors("NODE2"));
+        assertNull(list.getNeighbors("NODE3"));
+
+
     }
 
     @Test
     void addDirectedEdge() {
-        AdjList list = new AdjList();
+        AdjList<String> list = new AdjList<>(String.class);
         list.addDirectedEdge("NODE1", "NODE2", 12);
         list.addDirectedEdge("NODE1", "NODE3", -999);
         list.addDirectedEdge("NODE3", "NODE1", 78);
@@ -36,40 +38,55 @@ class AdjListTest {
         list.addDirectedEdge("NODE2", "NODE4", 0);
         list.addDirectedEdge("NODE4", "NODE4", 1);
 
-        Pair[] expNghNode1 = {new Pair("NODE2", 12), new Pair("NODE3", -999)};
-        Pair[] expNghNode2 = {new Pair("NODE4", 0)};
-        Pair[] expNghNode3 = {new Pair("NODE1", 78), new Pair("NODE5", 1111), new Pair("NODE2", 25)};
-        Pair[] expNghNode4 = {new Pair("NODE4", 1)};
+        assertEquals(list.getNeighbors("NODE1").get(0).getKey().key, "NODE2");
+        assertEquals(list.getNeighbors("NODE1").get(0).getValue(), 12);
+        assertEquals(list.getNeighbors("NODE1").get(1).getKey().key, "NODE3");
+        assertEquals(list.getNeighbors("NODE1").get(1).getValue(), -999);
 
-        assertArrayEquals(expNghNode1, list.getNeighbors("NODE1"));
-        assertArrayEquals(expNghNode2, list.getNeighbors("NODE2"));
-        assertArrayEquals(expNghNode3, list.getNeighbors("NODE3"));
-        assertArrayEquals(expNghNode4, list.getNeighbors("NODE4"));
-        assertArrayEquals(new Pair[0], list.getNeighbors("NODE5"));
+        assertEquals(list.getNeighbors("NODE3").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE3").get(0).getValue(), 78);
+        assertEquals(list.getNeighbors("NODE3").get(1).getKey().key, "NODE5");
+        assertEquals(list.getNeighbors("NODE3").get(1).getValue(), 1111);
+        assertEquals(list.getNeighbors("NODE3").get(2).getKey().key, "NODE2");
+        assertEquals(list.getNeighbors("NODE3").get(2).getValue(), 25);
+
+        assertEquals(list.getNeighbors("NODE2").get(0).getKey().key, "NODE4");
+        assertEquals(list.getNeighbors("NODE2").get(0).getValue(), 0);
+
+        assertEquals(list.getNeighbors("NODE4").get(0).getKey().key, "NODE4");
+        assertEquals(list.getNeighbors("NODE4").get(0).getValue(), 1);
     }
 
     @Test
     void addBidirectionalEdge() {
-        AdjList list = new AdjList();
+        AdjList<String> list = new AdjList<>(String.class);
         list.addBidirectionalEdge("NODE1", "NODE2", 2);
         list.addDirectedEdge("NODE2", "NODE3", 0);
         list.addBidirectionalEdge("NODE3", "NODE1", 78);
         list.addBidirectionalEdge("NODE4", "NODE1", -1);
 
-        Pair[] expNghNode1 = {new Pair("NODE2", 2), new Pair("NODE3", 78), new Pair("NODE4", -1)};
-        Pair[] expNghNode2 = {new Pair("NODE1", 2), new Pair("NODE3", 0)};
-        Pair[] expNghNode3 = {new Pair("NODE1", 78)};
-        Pair[] expNghNode4 = {new Pair("NODE1", -1)};
+        assertEquals(list.getNeighbors("NODE1").get(0).getKey().key, "NODE2");
+        assertEquals(list.getNeighbors("NODE1").get(0).getValue(), 2);
+        assertEquals(list.getNeighbors("NODE1").get(1).getKey().key, "NODE3");
+        assertEquals(list.getNeighbors("NODE1").get(1).getValue(), 78);
+        assertEquals(list.getNeighbors("NODE1").get(2).getKey().key, "NODE4");
+        assertEquals(list.getNeighbors("NODE1").get(2).getValue(), -1);
 
-        assertArrayEquals(expNghNode1, list.getNeighbors("NODE1"));
-        assertArrayEquals(expNghNode2, list.getNeighbors("NODE2"));
-        assertArrayEquals(expNghNode3, list.getNeighbors("NODE3"));
-        assertArrayEquals(expNghNode4, list.getNeighbors("NODE4"));
+        assertEquals(list.getNeighbors("NODE2").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE2").get(0).getValue(), 2);
+        assertEquals(list.getNeighbors("NODE2").get(1).getKey().key, "NODE3");
+        assertEquals(list.getNeighbors("NODE2").get(1).getValue(), 0);
+
+        assertEquals(list.getNeighbors("NODE3").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE3").get(0).getValue(), 78);
+
+        assertEquals(list.getNeighbors("NODE4").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE4").get(0).getValue(), -1);
     }
 
     @Test
     void readAndAddBufferedReader() {
-        AdjList list = new AdjList();
+        AdjList<String> list = new AdjList<>(String.class);
         IOException thrownIO;
         NumberFormatException thrownNFE;
 

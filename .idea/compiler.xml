@@ -10,6 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name=".mvn" target="1.5" />
       <module name="PathfindingGUI" target="16" />
     </bytecodeTargetLevel>
   </component>

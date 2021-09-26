@@ -6,23 +6,27 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /*
  * Adjacency List class
- * Node values are stored as string keys in a hashmap
+ * Keys of type T are stored in a hashmap
  * each value is a LinkedList containing Pair<String, Integer> neighbors
  * where string = neighbor node value, Integer = edge value
  * */
-public class AdjList {
-    private Map<String, LinkedList<Pair<String, Integer>>> adj;
+public class AdjList<V> {
+    private Map<V, Pair<Node<Integer, V>, LinkedList<Pair<Node<Integer, V>, Integer>>>> adj;
     private boolean isWeighted = false, hasNegativeEdges = false;
+    Class<V> type;
 
-    AdjList() {
-        adj = new HashMap<>();
+    AdjList(Class<V> type) {
+        this.adj = new HashMap<>();
+        this.type = type;
+    }
+
+    AdjList(Class<V> type, int initialSize) {
+        this.type = type;
+        this.adj = new HashMap<>((initialSize * 4 + 2) / 3);
     }
 
     /*
@@ -60,55 +64,86 @@ public class AdjList {
         return adj.size();
     }
 
+    public boolean contains(V key) {
+        return adj.containsKey(key);
+    }
+
     /*
      * Get HashMap keySet
      * */
-    public Set<String> getKeySet() {
+    public Set<V> getKeySet() {
         return adj.keySet();
+    }
+
+    public Node<Integer, V> getNode(V key) {
+        if (!adj.containsKey(key))
+            return null;
+        return adj.get(key).getKey();
+
+    }
+
+    /*
+     * Assigns every field of node to default except value and key
+     * */
+    public void cleanNodeFields() {
+        Node<Integer, V> tmp;
+        for (Pair<Node<Integer, V>, LinkedList<Pair<Node<Integer, V>, Integer>>> value : adj.values()) {
+            tmp = value.getKey();
+            tmp.degree = 0;
+            tmp.d = Integer.MAX_VALUE;
+            tmp.parent = null;
+            tmp.child = null;
+            tmp.left = null;
+            tmp.right = null;
+            tmp.prev = null;
+            tmp.marked = false;
+            tmp.visited = false;
+            tmp.closed = false;
+        }
     }
 
     /*
      * Returns an array of Pairs of all neighbors of some vertex
      * */
-    public Pair[] getNeighbors(String vertex) {
-        if (adj.get(vertex) == null)
-            return new Pair[0];
-        //            return null;
-        return adj.get(vertex).toArray(new Pair[0]);
+    public LinkedList<Pair<Node<Integer, V>, Integer>> getNeighbors(V vertex) {
+        if (!adj.containsKey(vertex))
+            return null;
+        return adj.get(vertex).getValue();
     }
+
 
     /*
      * Adds node with no neighbors
      * */
-    public void addNode(String value) {
-        adj.putIfAbsent(value, new LinkedList<>());
+    public void addNode(V vertex) {
+        adj.putIfAbsent(vertex, new Pair<>(new Node<>(Integer.MAX_VALUE, vertex), new LinkedList<>()));
     }
 
     /*
      * Adds both vertex1 and vertex2 to the HashMap and a directed edge in that direction
      * */
-    public void addDirectedEdge(String vertex1, String vertex2, Integer edgeValue) {
+    public void addDirectedEdge(V vertex1, V vertex2, int edgeValue) {
         if (edgeValue < 0)
             hasNegativeEdges = true;
         if (edgeValue > 1)
             isWeighted = true;
-        adj.putIfAbsent(vertex1, new LinkedList<>());
-        adj.putIfAbsent(vertex2, new LinkedList<>());
-        adj.get(vertex1).add(new Pair<>(vertex2, edgeValue));
+        adj.putIfAbsent(vertex1, new Pair<>(new Node<>(Integer.MAX_VALUE, vertex1), new LinkedList<>()));
+        adj.putIfAbsent(vertex2, new Pair<>(new Node<>(Integer.MAX_VALUE, vertex2), new LinkedList<>()));
+        adj.get(vertex1).getValue().add(new Pair<>(adj.get(vertex2).getKey(), edgeValue));
     }
 
     /*
      * Adds both vertex1 and vertex2 to the HashMap and a bidirectional edge between them
      * */
-    public void addBidirectionalEdge(String vertex1, String vertex2, Integer edgeValue) {
+    public void addBidirectionalEdge(V vertex1, V vertex2, Integer edgeValue) {
         if (edgeValue < 0)
             hasNegativeEdges = true;
         if (edgeValue > 1)
             isWeighted = true;
-        adj.putIfAbsent(vertex1, new LinkedList<>());
-        adj.putIfAbsent(vertex2, new LinkedList<>());
-        adj.get(vertex1).add(new Pair<>(vertex2, edgeValue));
-        adj.get(vertex2).add(new Pair<>(vertex1, edgeValue));
+        adj.putIfAbsent(vertex1, new Pair<>(new Node<>(Integer.MAX_VALUE, vertex1), new LinkedList<>()));
+        adj.putIfAbsent(vertex2, new Pair<>(new Node<>(Integer.MAX_VALUE, vertex2), new LinkedList<>()));
+        adj.get(vertex1).getValue().add(new Pair<>(adj.get(vertex2).getKey(), edgeValue));
+        adj.get(vertex2).getValue().add(new Pair<>(adj.get(vertex1).getKey(), edgeValue));
     }
 
     /*
@@ -165,7 +200,26 @@ public class AdjList {
                 if (lineArray.length != 3) {
                     throw new IOException("Invalid data for binding");
                 }
-                addDirectedEdge(lineArray[0], lineArray[1], Integer.parseInt(lineArray[2]));
+
+                if (type == String.class)
+                    addDirectedEdge(type.cast(lineArray[0]), type.cast(lineArray[1]),
+                            Integer.parseInt(lineArray[2]));
+                else if (type == Integer.class)
+                    addDirectedEdge(type.cast(Integer.parseInt(lineArray[0])),
+                            type.cast(Integer.parseInt(lineArray[1])), Integer.parseInt(lineArray[2]));
+                else if (type == Long.class)
+                    addDirectedEdge(type.cast(Long.parseLong(lineArray[0])),
+                            type.cast(Long.parseLong(lineArray[1])), Integer.parseInt(lineArray[2]));
+                else if (type == Float.class)
+                    addDirectedEdge(type.cast(Float.parseFloat(lineArray[0])),
+                            type.cast(Float.parseFloat(lineArray[1])), Integer.parseInt(lineArray[2]));
+                else if (type == Double.class)
+                    addDirectedEdge(type.cast(Double.parseDouble(lineArray[0])),
+                            type.cast(Double.parseDouble(lineArray[1])), Integer.parseInt(lineArray[2]));
+                else
+                    throw new IOException("Invalid data for binding");
+
+
             }
         } catch (Exception e) {
             emptyList();

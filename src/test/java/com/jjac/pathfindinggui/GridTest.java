@@ -11,19 +11,19 @@ import static org.junit.jupiter.api.Assertions.*;
 class GridTest {
     private GraphicsContext gc;
 
-    private ArrayList<ArrayList<Integer>> getZeroedArrayList(int width, int height) {
+    private ArrayList<ArrayList<Integer>> getClearedArrayList(int width, int height) {
         ArrayList<ArrayList<Integer>> array = new ArrayList<ArrayList<Integer>>(height);
         for (int i = 0; i < height; ++i) {
             array.add(new ArrayList<Integer>(width));
             for (int j = 0; j < width; ++j)
-                array.get(i).add(0);
+                array.get(i).add(1);
         }
         return array;
     }
 
     @Test
     void addGridElement() {
-        Grid grid = new Grid(gc, gc, 4, 7);
+        Grid grid = new Grid(4, 7);
 
         ArrayList<ArrayList<Integer>> array = new ArrayList<>(7);
 
@@ -35,19 +35,21 @@ class GridTest {
         array.add(new ArrayList<>(Arrays.asList(1, 1, 0, 0)));
         array.add(new ArrayList<>(Arrays.asList(0, 1, 0, 1)));
 
-        grid.addGridElement(1, 1, 0);
-        grid.addGridElement(1, 2, 0);
-        grid.addGridElement(1, 0, 1);
-        grid.addGridElement(1, 2, 2);
-        grid.addGridElement(1, 3, 2);
-        grid.addGridElement(1, 0, 3);
-        grid.addGridElement(1, 1, 3);
-        grid.addGridElement(1, 2, 3);
-        grid.addGridElement(1, 3, 3);
-        grid.addGridElement(1, 0, 5);
-        grid.addGridElement(1, 1, 5);
-        grid.addGridElement(1, 1, 6);
-        grid.addGridElement(1, 3, 6);
+        grid.addGridElement(0, 0, 0);
+        grid.addGridElement(0, 3, 0);
+        grid.addGridElement(0, 1, 1);
+        grid.addGridElement(0, 2, 1);
+        grid.addGridElement(0, 3, 1);
+        grid.addGridElement(0, 0, 2);
+        grid.addGridElement(0, 1, 2);
+        grid.addGridElement(0, 0, 4);
+        grid.addGridElement(0, 1, 4);
+        grid.addGridElement(0, 2, 4);
+        grid.addGridElement(0, 3, 4);
+        grid.addGridElement(0, 2, 5);
+        grid.addGridElement(0, 3, 5);
+        grid.addGridElement(0, 0, 6);
+        grid.addGridElement(0, 2, 6);
 
         assertEquals(array, grid.innerArray);
     }
@@ -55,7 +57,7 @@ class GridTest {
     @Test
     void resize() {
         //Testing shrinking
-        Grid grid = new Grid(gc, gc, 16, 5);
+        Grid grid = new Grid(16, 5);
         grid.addGridElement(1, 0, 0);
         grid.addGridElement(1, 15, 4);
         grid.addGridElement(1, 8, 0);
@@ -69,7 +71,7 @@ class GridTest {
         grid.addGridElement(1, 1, 1);
 
 
-        ArrayList<ArrayList<Integer>> array = getZeroedArrayList(10, 2);
+        ArrayList<ArrayList<Integer>> array = getClearedArrayList(10, 2);
         array.get(0).set(0, 1);
         array.get(0).set(8, 1);
         array.get(0).set(3, 1);
@@ -81,7 +83,7 @@ class GridTest {
         assertEquals(array, grid.innerArray);
 
         //Testing expansion
-        array = getZeroedArrayList(10, 17);
+        array = getClearedArrayList(10, 17);
         array.get(0).set(0, 1);
         array.get(0).set(8, 1);
         array.get(0).set(3, 1);
@@ -117,7 +119,7 @@ class GridTest {
 
         grid.resize(25, 17);
 
-        array = getZeroedArrayList(25, 17);
+        array = getClearedArrayList(25, 17);
         array.get(0).set(0, 1);
         array.get(0).set(8, 1);
         array.get(0).set(3, 1);
@@ -148,7 +150,7 @@ class GridTest {
 
     @Test
     void clearGrid() {
-        Grid grid = new Grid(gc, gc, 20, 20);
+        Grid grid = new Grid(20, 20);
 
         grid.addGridElement(1, 0, 2);
         grid.addGridElement(1, 13, 2);
@@ -159,11 +161,11 @@ class GridTest {
 
         grid.clearGrid();
 
-        ArrayList<ArrayList<Integer>> array = getZeroedArrayList(20, 20);
+        ArrayList<ArrayList<Integer>> array = getClearedArrayList(20, 20);
 
         assertEquals(array, grid.innerArray);
 
-        grid = new Grid(gc, gc, 10, 80);
+        grid = new Grid(10, 80);
         grid.addGridElement(1, 0, 0);
         grid.addGridElement(1, 2, 2);
         grid.addGridElement(1, 4, 19);
@@ -175,72 +177,8 @@ class GridTest {
 
         grid.clearGrid();
 
-        array = getZeroedArrayList(10, 80);
+        array = getClearedArrayList(10, 80);
 
         assertEquals(array, grid.innerArray);
-    }
-
-    @Test
-    void draw() {
-    }
-
-    @Test
-    void generateAdjList() {
-        Grid grid = new Grid(gc, gc, 6, 4);
-        grid.addGridElement(2, 2, 0);
-        grid.addGridElement(0, 5, 0);
-        grid.addGridElement(2, 1, 1);
-        grid.addGridElement(0, 2, 1);
-        grid.addGridElement(2, 4, 1);
-        grid.addGridElement(0, 5, 1);
-        grid.addGridElement(1, 0, 2);
-        grid.addGridElement(0, 1, 2);
-        grid.addGridElement(0, 2, 2);
-        grid.addGridElement(3, 3, 2);
-        grid.addGridElement(0, 4, 2);
-        grid.addGridElement(0, 4, 2);
-        grid.addGridElement(5, 0, 3);
-        grid.addGridElement(3, 1, 3);
-        grid.addGridElement(2, 3, 3);
-
-        AdjList list = grid.generateAdjList();
-        AdjList expectedList = new AdjList();
-        expectedList.processEdgeListFile("test/java/GUIapplication/gridTestGraph.txt");
-        assertTrue(Arrays.asList(expectedList.getNeighbors("0-0"))
-                .containsAll(Arrays.asList(list.getNeighbors("0-0"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("1-0")).
-                containsAll(Arrays.asList(list.getNeighbors("1-0"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("2-0")).
-                containsAll(Arrays.asList(list.getNeighbors("2-0"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("3-0")).
-                containsAll(Arrays.asList(list.getNeighbors("3-0"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("4-0")).
-                containsAll(Arrays.asList(list.getNeighbors("4-0"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("0-1")).
-                containsAll(Arrays.asList(list.getNeighbors("0-1"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("1-1")).
-                containsAll(Arrays.asList(list.getNeighbors("1-1"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("3-1")).
-                containsAll(Arrays.asList(list.getNeighbors("3-1"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("4-1")).
-                containsAll(Arrays.asList(list.getNeighbors("4-1"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("0-2")).
-                containsAll(Arrays.asList(list.getNeighbors("0-2"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("3-2")).
-                containsAll(Arrays.asList(list.getNeighbors("3-2"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("5-2")).
-                containsAll(Arrays.asList(list.getNeighbors("5-2"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("0-3")).
-                containsAll(Arrays.asList(list.getNeighbors("0-3"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("1-3")).
-                containsAll(Arrays.asList(list.getNeighbors("1-3"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("2-3")).
-                containsAll(Arrays.asList(list.getNeighbors("2-3"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("3-3")).
-                containsAll(Arrays.asList(list.getNeighbors("3-3"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("4-3")).
-                containsAll(Arrays.asList(list.getNeighbors("4-3"))));
-        assertTrue(Arrays.asList(expectedList.getNeighbors("5-3")).
-                containsAll(Arrays.asList(list.getNeighbors("5-3"))));
     }
 }

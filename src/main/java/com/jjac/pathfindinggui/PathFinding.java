@@ -1,16 +1,10 @@
 package com.jjac.pathfindinggui;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritablePixelFormat;
-import javafx.scene.paint.Color;
-import javafx.util.Duration;
 import javafx.util.Pair;
 
 import java.nio.ByteBuffer;
@@ -90,6 +84,16 @@ class IntegerEntry implements Comparable<IntegerEntry> {
     }
 }
 
+class IntegerBooleanPair {
+    public int i;
+    public boolean b;
+
+    IntegerBooleanPair(int i, boolean b) {
+        this.i = i;
+        this.b = b;
+    }
+}
+
 /*
  * PathFinding utility class
  * Contains various algorithms used for pathfinding between two nodes
@@ -99,76 +103,226 @@ public final class PathFinding {
     private PathFinding() {
     }
 
+    //Helper function for finding manhattan distance between two nodes where first two bytes == X and last 2 == Y
+    private static int MHDistance(int NODE1, int NODE2) {
+        return Math.abs((NODE1 >> 16) - (NODE2 >> 16)) + Math.abs((NODE1 & 0x00FF) - (NODE2 & 0x00FF));
+    }
+
+    //Helper function for diagonal distance between two nodes when 8 movements are allowed
+    private static int diagonalDistance(int NODE1, int NODE2) {
+        int dx = Math.abs((NODE1 >> 16) - (NODE2 >> 16));
+        int dy = Math.abs((NODE1 & 0x00FF) - (NODE2 & 0x00FF));
+        if (dx > dy)
+            return 2 * (dx - dy) + 2 * dy;
+        else
+            return 2 * (dy - dx) + 2 * dx;
+    }
+
+
     /*
-     * Dijkstra based pathfinding algorithm
+     * A* pathfinding algorithm
      * Returns the shortest path between startNode and endNode and the vertex sequence path between them
+     * Uses Manhattan distance between nodes to guide the search
+     * Nodes input are integers, where first two bytes = x position and last 2 = y position
      * */
-    public static int dijkstra(AdjList adjList, String startNode, String endNode, LinkedList<String> pathList) {
+    public static int AStar(AdjList<Integer> adjList, int startNode, int endNode, LinkedList<String> pathList) {
         //Valid AdjList
         if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
             return Integer.MAX_VALUE;
 
-        //Checks if graph is suitable for BFS
-//        if (!adjList.isWeighted())
-//            return Integer.MAX_VALUE;//**************************************************
+        //Checks if start and end nodes exist in adjList
+        if (!adjList.contains(startNode) || !adjList.contains(endNode))
+            return Integer.MAX_VALUE;
 
+        //Sets all node objects in adjList to defaults
+        adjList.cleanNodeFields();
 
-        //Hashtable used to store minimal distance from startNode
-        HashMap<String, Integer> d = new HashMap<>(adjList.size());
-        //Priority queue for storing current shortest path
-        PriorityQueue<Entry> q = new PriorityQueue<>(adjList.size());
-
-        //Hashtable used for tracking path of vertexes, each key node has of value the previous node of shortest path
-        HashMap<String, String> previousVertexes = new HashMap<>(adjList.size());
-
-        for (String key : adjList.getKeySet()) { //Sets all initial distances to infinity
-            d.putIfAbsent(key, Integer.MAX_VALUE);
-            q.add(new Entry(Integer.MAX_VALUE, key));
-            previousVertexes.putIfAbsent(key, null);
-        }
+        //Fibonacci Heap for storing current shortest path + heuristic value as direction for search
+        FibHeap<Integer, Integer> qh = new FibHeap<>();
 
         //Set source node value to 0
-        d.put(startNode, 0); //Distance form source to source is known == 0
-        q.remove(new Entry(Integer.MAX_VALUE, startNode));
-        q.add(new Entry(0, startNode));
+        qh.insert(adjList.getNode(startNode), 0);
+        qh.peek().d = 0;
+        qh.peek().visited = true;
 
         //Helper variables
-        Pair<String, Integer>[] neighbors;//Array of pairs <neighborKey, edgeWeight>
-        String u, //Current Node with shortest path / top of min-queue
-                neighbor;
+        LinkedList<Pair<Node<Integer, Integer>, Integer>> neighbors;//List of pairs <neighborKey, edgeWeight>
+        Node<Integer, Integer> neighbor, u;//Current Node with shortest path / top of min-queue
+        int edgeWeight;
+        while (qh.size() != 0) {
+            u = qh.extractMin();
+            u.closed = true;
+
+            //endNode found
+            if (Objects.equals(u.value, endNode)) {
+                //Build path of vertexes
+                Node<Integer, Integer> current = adjList.getNode(endNode);
+                pathList.add(Integer.toString(current.value));
+                while ((current = current.prev) != null)
+                    pathList.addFirst(Integer.toString(current.value));
+                return u.d;
+            }
+
+            neighbors = adjList.getNeighbors(u.value);
+            for (Pair<Node<Integer, Integer>, Integer> neighborKeyValuePair : neighbors) {//Loops through every neighbor
+                neighbor = neighborKeyValuePair.getKey();
+                edgeWeight = neighborKeyValuePair.getValue();
+
+                //Node already has his min path
+                if (neighbor.closed)
+                    continue;
+
+                //Relaxation step
+                //Checks if node has been visited before
+                //Checks if distance to neighbor node is less than the min distance already found
+                if (!neighbor.visited || neighbor.d > u.d + edgeWeight) {
+                    //Assign shorter path found to neighbor in out array
+                    neighbor.d = u.d + edgeWeight;
+
+                    //Assigns previous shortest node to neighbor
+                    neighbor.prev = u;
+
+                    //Adds neighbor to queue
+                    if (!neighbor.visited) {
+                        qh.insert(neighbor, u.d + edgeWeight + diagonalDistance(neighbor.value, endNode));
+                        neighbor.visited = true;
+                    } else {
+                        //Decreases the key for neighbor in queue
+                        qh.decreaseKey(neighbor,
+                                u.d + edgeWeight + diagonalDistance(neighbor.value, endNode));
+                    }
+                }
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+
+    /*
+     * Dijkstra based pathfinding algorithm
+     * Returns the shortest path between startNode and endNode and the vertex sequence path between them
+     * */
+    public static int dijkstra(AdjList<String> adjList, String startNode, String endNode, LinkedList<String> pathList) {
+        //Valid AdjList
+        if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
+            return Integer.MAX_VALUE;
+
+        //Checks if start and end nodes exist in adjList
+        if (!adjList.contains(startNode) || !adjList.contains(endNode))
+            return Integer.MAX_VALUE;
+
+        //Checks if graph is suitable for BFS
+        if (!adjList.isWeighted())
+            return BFS(adjList, startNode, endNode, pathList);
+
+        //Sets all node objects in adjList to defaults
+        adjList.cleanNodeFields();
+
+        //Fibonacci heap for storing current shortest path
+        FibHeap<Integer, String> q = new FibHeap<>();
+
+        //Set source node value to 0
+        q.insert(adjList.getNode(startNode), 0);
+        q.peek().d = 0;
+        q.peek().visited = true;
+
+        //Helper variables
+        LinkedList<Pair<Node<Integer, String>, Integer>> neighbors;//Array of pairs <neighborKey, edgeWeight>
+        Node<Integer, String> neighbor, u;//Current Node with shortest path / top of min-queue
         int edgeWeight;
         while (q.size() != 0) {
-            u = q.poll().getValue();
-            neighbors = adjList.getNeighbors(u);
-            for (Pair<String, Integer> neighborKeyValuePair : neighbors) {//Loops through every neighbor
+            u = q.extractMin();
+            u.closed = true;
+
+            //endNode found
+            if (Objects.equals(u.value, endNode)) {
+                //Build path of vertexes
+                Node<Integer, String> current = adjList.getNode(endNode);
+                pathList.add(current.value);
+                while ((current = current.prev) != null)
+                    pathList.addFirst(current.value);
+                return u.d;
+            }
+
+            neighbors = adjList.getNeighbors(u.value);
+            for (Pair<Node<Integer, String>, Integer> neighborKeyValuePair : neighbors) {//Loops through every neighbor
                 neighbor = neighborKeyValuePair.getKey();
                 edgeWeight = neighborKeyValuePair.getValue();
                 //Relaxation step
                 //Checks if distance to neighbor node is less than the min distance already found
-                //Checks if distance to current node is infinite, to avoid overflow
-                if ((d.get(u) != Integer.MAX_VALUE) && (d.get(neighbor) > d.get(u) + edgeWeight)) {
-                    //Decreases the key for neighbor in queue
-                    q.remove(new Entry(d.get(neighbor), neighbor));//Removes and adds to prompt a min-queue restructure
-                    q.add(new Entry(d.get(u) + edgeWeight, neighbor));
-
+                if (!neighbor.visited || neighbor.d > u.d + edgeWeight) {
                     //Assign shorter path found to neighbor in out array
-                    d.put(neighbor, d.get(u) + edgeWeight);
+                    neighbor.d = u.d + edgeWeight;
 
                     //Assigns previous shortest node to neighbor
-                    previousVertexes.put(neighbor, u);
+                    neighbor.prev = u;
+
+                    //Inserts or decrease key
+                    if (!neighbor.visited) {
+                        q.insert(neighbor, u.d + edgeWeight);
+                        neighbor.visited = true;
+                    } else {
+                        q.decreaseKey(neighbor, u.d + edgeWeight);
+                    }
                 }
             }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    public static int BFS(AdjList<String> adjList, String startNode, String endNode, LinkedList<String> pathList) {
+        //Valid AdjList
+        if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges() || adjList.isWeighted())
+            return Integer.MAX_VALUE;
+
+        //Checks if start and end nodes exist in adjList
+        if (!adjList.contains(startNode) || !adjList.contains(endNode))
+            return Integer.MAX_VALUE;
+
+        //Sets all node objects in adjList to defaults
+        adjList.cleanNodeFields();
+
+        //Queue for storing current shortest path
+        Queue<Node<Integer, String>> q = new LinkedList<>();
+
+        q.add(adjList.getNode(startNode));
+        q.peek().key = 0;
+        q.peek().d = 0;
+        q.peek().visited = true;
+
+        //Helper variables
+        LinkedList<Pair<Node<Integer, String>, Integer>> neighbors;//Array of pairs <neighborKey, edgeWeight>
+        //Current Node with shortest path / top of min-queue
+        Node<Integer, String> neighbor, u;
+        while (q.size() != 0) {
+            u = q.poll();
+            u.closed = true;
 
             //endNode found
-            if (Objects.equals(u, endNode)) {
+            if (Objects.equals(u.value, endNode)) {
                 //Build path of vertexes
-                String current = endNode;
-                if (d.get(u) != Integer.MAX_VALUE) pathList.add(current);
-                while ((current = previousVertexes.get(current)) != null)
-                    pathList.addFirst(current);
-                return d.get(u);
+                Node<Integer, String> current = adjList.getNode(endNode);
+                pathList.add(current.value);
+                while ((current = current.prev) != null) {
+                    pathList.addFirst(current.value);
+                }
+                return u.d;
             }
 
+            neighbors = adjList.getNeighbors(u.value);
+            for (Pair<Node<Integer, String>, Integer> neighborKeyValuePair : neighbors) {//Loops through every neighbor
+                neighbor = neighborKeyValuePair.getKey();
+                //Relaxation step
+                //Checks if neighbor hasn't been checked, if so the assign the shortest path
+                if (!neighbor.visited) {
+                    //Adds checked neighbor to queue
+                    neighbor.key = u.d + 1;
+                    neighbor.d = u.d + 1; //Assign shorter path found to neighbor
+                    neighbor.prev = u;
+                    neighbor.visited = true;
+                    q.add(neighbor);
+                }
+            }
         }
         return Integer.MAX_VALUE;
     }
@@ -176,16 +330,16 @@ public final class PathFinding {
     /*
      * Class used for Performing Dijkstra pathfinding in Grid
      * startNode and endNode are compressed each inside a int, where first 2 bytes == x coordinate
-     * and last 2 == y coordinate*/
-
-    static class DijkstraStepsTask extends Task<Integer> {
-        private final AdjList adjList;
+     * and last 2 == y coordinate
+     * */
+    public static class DijkstraStepsTask extends Task<Integer> {
+        private final AdjList<Integer> adjList;
         private final int startNode, endNode;
         GraphicsContext checkedNodesGC;
         GraphicsContext shortestPathGC;
         double cellSideLength;
 
-        DijkstraStepsTask(AdjList adjList, int startNode, int endNode, GraphicsContext checkedNodesGC,
+        DijkstraStepsTask(AdjList<Integer> adjList, int startNode, int endNode, GraphicsContext checkedNodesGC,
                           GraphicsContext shortestPathGC, double cellSideLength) {
             this.adjList = adjList;
             this.startNode = startNode;
@@ -201,49 +355,65 @@ public final class PathFinding {
             if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
                 return Integer.MAX_VALUE;
 
-            //Hashtable used to store minimal distance from startNode
-            HashMap<Integer, Integer> d = new HashMap<>(adjList.size());
-            //Priority queue for storing current shortest path
-            PriorityQueue<IntegerEntry> q = new PriorityQueue<>(adjList.size());
+            //Checks if start and end nodes exist in adjList
+            if (!adjList.contains(startNode) || !adjList.contains(endNode))
+                return Integer.MAX_VALUE;
+
+            //Checks if graph is suitable for BFS
+            if (!adjList.isWeighted())
+                return BFS();
+
+            //Sets all node objects in adjList to defaults
+            adjList.cleanNodeFields();
+
+            //Fibonacci Heap for storing current shortest path
+            FibHeap<Integer, Integer> q = new FibHeap<>();
 
             //Hashtable used for backtracking of vertex, each key node has of value the previous node of shortest path
-            HashMap<Integer, Integer> previousVertexes = new HashMap<>(adjList.size());
-
-            for (String key : adjList.getKeySet()) { //Sets all initial distances to infinity
-                int intKey = Integer.parseInt(key);
-                d.putIfAbsent(intKey, Integer.MAX_VALUE);
-                q.add(new IntegerEntry(Integer.MAX_VALUE, intKey));
-                previousVertexes.putIfAbsent(intKey, Integer.MIN_VALUE);
-            }
+//            HashMap<Integer, Integer> previousVertexes = new HashMap<>(adjList.size());
+//
+//            for (Integer key : adjList.getKeySet()) { //Sets all initial distances to infinity
+//                d.putIfAbsent(key, Integer.MAX_VALUE);
+//                q.add(new IntegerEntry(Integer.MAX_VALUE, key));
+//                previousVertexes.putIfAbsent(key, Integer.MIN_VALUE);
+//            }
 
             //Set source node value to 0
-            d.put(startNode, 0); //Distance form source to source is known == 0
-            q.remove(new IntegerEntry(Integer.MAX_VALUE, startNode));
-            q.add(new IntegerEntry(0, startNode));
+            q.insert(adjList.getNode(startNode), 0);
+            q.peek().d = 0;
+            q.peek().visited = true;
 
             //Helper variables
-            Pair<String, Integer>[] neighbors;//Array of pairs <neighborKey, edgeWeight>
-            int neighbor, u, edgeWeight; //Current Node with shortest path / top of min-queue
+            LinkedList<Pair<Node<Integer, Integer>, Integer>> neighbors;//Array of pairs <neighborKey, edgeWeight>
+            Node<Integer, Integer> neighbor, u;
+            int edgeWeight;
 
             //Variables used for buffer drawing
-            byte[] shortestPathBuffer = new byte[650 * 650 * 4], checkedNodesBuffer = new byte[650 * 650 * 4];
-            WritablePixelFormat<ByteBuffer> pixelFormat = PixelFormat.getByteBgraPreInstance();
-            PixelWriter shortestPathPW = shortestPathGC.getPixelWriter();
-            PixelWriter checkedNodesPW = checkedNodesGC.getPixelWriter();
             long speed = (long) (cellSideLength * 1.20);
 
-
             while (!isCancelled() && q.size() != 0) {
-                u = q.poll().getValue();
+                u = q.extractMin();
+                u.closed = true;
 
                 //Marks node as checked
-                DrawBufferShapes.drawSquare((u >> 16) * cellSideLength + 0.5f,
-                        (u & 0x0000FFFF) * cellSideLength + 0.5f, (int) cellSideLength - 1,
-                        (byte) 0xEE, (byte) 0x82, (byte) 0xEE, (byte) 0xFF, checkedNodesBuffer, 650 * 4);
+                checkedNodesGC.fillRect((u.value >> 16) * cellSideLength + 0.5f,
+                        (u.value & 0x0000FFFF) * cellSideLength + 0.5f,
+                        (int) cellSideLength - 1, (int) cellSideLength - 1);
 
+                //endNode found
+                if (u.value == endNode) {
+                    //Draws shortest path
+                    Node<Integer, Integer> current = u, prev = u;
 
-
-                checkedNodesPW.setPixels(0, 0, 650, 650, pixelFormat, checkedNodesBuffer, 0, 650 * 4);
+                    while ((current = current.prev) != null) {
+                        shortestPathGC.strokeLine((prev.value >> 16) * cellSideLength + cellSideLength / 2,
+                                (prev.value & 0x0000FFFF) * cellSideLength + cellSideLength / 2,
+                                (current.value >> 16) * cellSideLength + cellSideLength / 2,
+                                (current.value & 0x0000FFFF) * cellSideLength + cellSideLength / 2);
+                        prev = current;
+                    }
+                    return u.d;
+                }
 
                 //Wait after checking node
                 try {
@@ -253,27 +423,81 @@ public final class PathFinding {
                         break;
                 }
 
-                //Draws current shortest path
-                //Clears past path
-                //Allocate new Buffer everytime
-                shortestPathBuffer = new byte[650 * 650 * 4];
-                //*******************
+                //Checking Neighbors
+                neighbors = adjList.getNeighbors(u.value);
+                for (Pair<Node<Integer, Integer>, Integer> neighborKeyValuePair : neighbors) {
+                    neighbor = neighborKeyValuePair.getKey();
+                    edgeWeight = neighborKeyValuePair.getValue();
 
-                int current = u, prev = u;
+                    //Relaxation step
+                    //Checks if distance to neighbor node is less than the min distance already found
+                    if (!neighbor.visited || neighbor.d > u.d + edgeWeight) {
+                        //Assign shorter path found to neighbor in out array
+                        neighbor.d = u.d + edgeWeight;
 
-                while ((current = previousVertexes.get(current)) != Integer.MIN_VALUE) {
-                    DrawBufferShapes.drawLine((prev >> 16) * cellSideLength + cellSideLength / 2,
-                            (prev & 0x0000FFFF) * cellSideLength + cellSideLength / 2,
-                            (current >> 16) * cellSideLength + cellSideLength / 2,
-                            (current & 0x0000FFFF) * cellSideLength + cellSideLength / 2,
-                            6, (byte) 0x00, (byte) 0x00, (byte) 0xFF, (byte) 0xFF,
-                            shortestPathBuffer, 650 * 4);
-                    shortestPathPW.setPixels(0, 0, 650, 650, pixelFormat, shortestPathBuffer,
-                            0, 650 * 4);
-                    prev = current;
+                        //Assigns previous shortest node to neighbor
+                        neighbor.prev = u;
+
+                        //Inserts or decrease key
+                        if (!neighbor.visited) {
+                            q.insert(neighbor, u.d + edgeWeight);
+                            neighbor.visited = true;
+                        } else {
+                            q.decreaseKey(neighbor, u.d + edgeWeight);
+                        }
+                    }
+                }
+            }
+            return Integer.MAX_VALUE;
+        }
+
+        private int BFS() {
+            //Sets all node objects in adjList to defaults
+            adjList.cleanNodeFields();
+
+            //Queue for storing current shortest path
+            Queue<Node<Integer, Integer>> q = new LinkedList<>();
+
+            //Set source node value to 0
+            q.add(adjList.getNode(startNode));
+            q.peek().key = 0;
+            q.peek().d = 0;
+            q.peek().visited = true;
+
+            //Helper variables
+            LinkedList<Pair<Node<Integer, Integer>, Integer>> neighbors;//Array of pairs <neighborKey, edgeWeight>
+            Node<Integer, Integer> neighbor, u;
+            //Variables used for buffer drawing
+            byte[] shortestPathBuffer = new byte[650 * 650 * 4], checkedNodesBuffer = new byte[650 * 650 * 4];
+            WritablePixelFormat<ByteBuffer> pixelFormat = PixelFormat.getByteBgraPreInstance();
+            PixelWriter shortestPathPW = shortestPathGC.getPixelWriter();
+            PixelWriter checkedNodesPW = checkedNodesGC.getPixelWriter();
+            long speed = (long) (cellSideLength * 1.20);
+
+            while (!isCancelled() && q.size() != 0) {
+                u = q.poll();
+
+                //Marks node as checked
+                checkedNodesGC.fillRect((u.value >> 16) * cellSideLength + 0.5f,
+                        (u.value & 0x0000FFFF) * cellSideLength + 0.5f,
+                        (int) cellSideLength - 1, (int) cellSideLength - 1);
+
+                //endNode found
+                if (u.value == endNode) {
+                    //Draws shortest path
+                    Node<Integer, Integer> current = u, prev = u;
+
+                    while ((current = current.prev) != null) {
+                        shortestPathGC.strokeLine((prev.value >> 16) * cellSideLength + cellSideLength / 2,
+                                (prev.value & 0x0000FFFF) * cellSideLength + cellSideLength / 2,
+                                (current.value >> 16) * cellSideLength + cellSideLength / 2,
+                                (current.value & 0x0000FFFF) * cellSideLength + cellSideLength / 2);
+                        prev = current;
+                    }
+                    return u.d;
                 }
 
-                //Wait after drawing path
+                //Wait after checking node
                 try {
                     Thread.sleep(speed);
                 } catch (InterruptedException interrupted) {
@@ -282,190 +506,134 @@ public final class PathFinding {
                 }
 
                 //Checking Neighbors
-                neighbors = adjList.getNeighbors(Integer.toString(u));
-                for (int i = 0; i < neighbors.length; ++i) {
-                    neighbor = Integer.parseInt(neighbors[i].getKey());
-                    edgeWeight = neighbors[i].getValue();
-
-
+                neighbors = adjList.getNeighbors(u.value);
+                for (Pair<Node<Integer, Integer>, Integer> neighborKeyValuePair : neighbors) {
+                    neighbor = neighborKeyValuePair.getKey();
                     //Relaxation step
-                    //Checks if distance to neighbor node is less than the min distance already found
-                    //Checks if distance to current node is infinite, to avoid overflow
-                    if ((d.get(u) != Integer.MAX_VALUE) && (d.get(neighbor) > d.get(u) + edgeWeight)) {
-                        //Decreases the key for neighbor in queue
-                        //Removes and adds to prompt a min-queue restructure
-                        q.remove(new IntegerEntry(d.get(neighbor), neighbor));
-                        q.add(new IntegerEntry(d.get(u) + edgeWeight, neighbor));
-
-                        DrawBufferShapes.drawSquare((neighbor >> 16) * cellSideLength + 0.5f,
-                                (neighbor & 0x0000FFFF) * cellSideLength + 0.5f, (int) cellSideLength - 1,
-                                (byte) 0x98, (byte) 0xFB, (byte) 0x98, (byte) 0xFF,
-                                checkedNodesBuffer, 650 * 4);
-
-                        checkedNodesPW.setPixels(0, 0, 650, 650,
-                                pixelFormat, checkedNodesBuffer, 0, 650 * 4);
-
-                        //Assign shorter path found to neighbor in out array
-                        d.put(neighbor, d.get(u) + edgeWeight);
-
-                        //Assigns previous shortest node to neighbor
-                        previousVertexes.put(neighbor, u);
-
-//                        try {
-//                            Thread.sleep(speed);
-//                        } catch (InterruptedException interrupted) {
-//                            if (isCancelled())
-//                                break;
-//                        }
+                    //Checks if neighbor hasn't been checked, if so the assign the shortest path
+                    if (!neighbor.visited) {
+                        //Adds checked neighbor to queue
+                        neighbor.key = u.d + 1;
+                        neighbor.d = u.d + 1; //Assign shorter path found to neighbor
+                        neighbor.prev = u;
+                        neighbor.visited = true;
+                        q.add(neighbor);
                     }
                 }
-
-                //endNode found
-                if (u == endNode) {
-                    //Color grid to found
-                    return d.get(u);
-                }
             }
             return Integer.MAX_VALUE;
         }
-
     }
 
+    public static class AStarStepsTask extends Task<Integer> {
+        private final AdjList<Integer> adjList;
+        private final int startNode, endNode;
+        GraphicsContext checkedNodesGC;
+        GraphicsContext shortestPathGC;
+        double cellSideLength;
 
-    public static int dijkstraStepsGrid(AdjList adjList, String startNode, String endNode,
-                                        GraphicsContext checkedNodesGC, GraphicsContext shortestPathGC,
-                                        double cellSideLength) {
-        //Valid AdjList
-        if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
+        AStarStepsTask(AdjList<Integer> adjList, int startNode, int endNode, GraphicsContext checkedNodesGC,
+                       GraphicsContext shortestPathGC, double cellSideLength) {
+            this.adjList = adjList;
+            this.startNode = startNode;
+            this.endNode = endNode;
+            this.checkedNodesGC = checkedNodesGC;
+            this.shortestPathGC = shortestPathGC;
+            this.cellSideLength = cellSideLength;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            //Valid AdjList
+            if (adjList == null || adjList.size() == 0 || adjList.hasNegativeEdges())
+                return Integer.MAX_VALUE;
+
+            //Checks if start and end nodes exist in adjList
+            if (!adjList.contains(startNode) || !adjList.contains(endNode))
+                return Integer.MAX_VALUE;
+
+            //Sets all node objects in adjList to defaults
+            adjList.cleanNodeFields();
+
+            //Fibonacci Heap for storing current shortest path + heuristic value as direction for search
+            FibHeap<Integer, Integer> qh = new FibHeap<>();
+
+            //Set source node value to 0
+            qh.insert(adjList.getNode(startNode), 0);
+            qh.peek().d = 0;
+            qh.peek().visited = true;
+
+            //Helper variables
+            LinkedList<Pair<Node<Integer, Integer>, Integer>> neighbors;//Array of pairs <neighborKey, edgeWeight>
+            //Current Node with shortest path / top of min-queue
+            int edgeWeight;
+            Node<Integer, Integer> neighbor, u;
+            long speed = (long) (cellSideLength * 1.20);
+            while (!isCancelled() && qh.size() != 0) {
+                u = qh.extractMin();
+                u.closed = true;
+
+                //Marks node as checked
+                checkedNodesGC.fillRect((u.value >> 16) * cellSideLength + 0.5f,
+                        (u.value & 0x0000FFFF) * cellSideLength + 0.5f,
+                        (int) cellSideLength - 1, (int) cellSideLength - 1);
+
+                //endNode found
+                if (u.value == endNode) {
+                    //Draws shortest path
+                    Node<Integer, Integer> current = u, prev = u;
+
+                    while ((current = current.prev) != null) {
+                        shortestPathGC.strokeLine((prev.value >> 16) * cellSideLength + cellSideLength / 2,
+                                (prev.value & 0x0000FFFF) * cellSideLength + cellSideLength / 2,
+                                (current.value >> 16) * cellSideLength + cellSideLength / 2,
+                                (current.value & 0x0000FFFF) * cellSideLength + cellSideLength / 2);
+                        prev = current;
+                    }
+                    return u.d;
+                }
+
+
+                //Wait after checking node
+                try {
+                    Thread.sleep(speed);
+                } catch (InterruptedException interrupted) {
+                    if (isCancelled())
+                        break;
+                }
+
+                neighbors = adjList.getNeighbors(u.value);
+                for (Pair<Node<Integer, Integer>, Integer> neighborKeyValuePair : neighbors) {//Loops through every neighbor
+                    neighbor = neighborKeyValuePair.getKey();
+                    edgeWeight = neighborKeyValuePair.getValue();
+
+                    //Node already has his min path
+                    if (neighbor.closed)
+                        continue;
+
+                    //Relaxation step
+                    //Checks if node has been visited before
+                    //Checks if distance to neighbor node is less than the min distance already found
+                    if (!neighbor.visited || neighbor.d > u.d + edgeWeight) {
+                        //Assign shorter path found to neighbor in out array
+                        neighbor.d = u.d + edgeWeight;
+
+                        //Assigns previous shortest node to neighbor
+                        neighbor.prev = u;
+
+                        //Adds neighbor to queue
+                        if (!neighbor.visited) {
+                            qh.insert(neighbor, u.d + edgeWeight + diagonalDistance(neighbor.value, endNode));
+                            neighbor.visited = true;
+                        } else {
+                            //Decreases the key for neighbor in queue
+                            qh.decreaseKey(neighbor,
+                                    u.d + edgeWeight + diagonalDistance(neighbor.value, endNode));
+                        }
+                    }
+                }
+            }
             return Integer.MAX_VALUE;
-
-        //Hashtable used to store minimal distance from startNode
-        HashMap<String, Integer> d = new HashMap<>(adjList.size());
-        //Priority queue for storing current shortest path
-        PriorityQueue<Entry> q = new PriorityQueue<>(adjList.size());
-
-        //Hashtable used for tracking path of vertexes, each key node has of value the previous node of shortest path
-        HashMap<String, String> previousVertexes = new HashMap<>(adjList.size());
-
-        for (String key : adjList.getKeySet()) { //Sets all initial distances to infinity
-            d.putIfAbsent(key, Integer.MAX_VALUE);
-            q.add(new Entry(Integer.MAX_VALUE, key));
-            previousVertexes.putIfAbsent(key, null);
         }
-
-        //Set source node value to 0
-        d.put(startNode, 0); //Distance form source to source is known == 0
-        q.remove(new Entry(Integer.MAX_VALUE, startNode));
-        q.add(new Entry(0, startNode));
-
-        //Helper variables
-        Pair<String, Integer>[] neighbors;//Array of pairs <neighborKey, edgeWeight>
-        String u, neighbor; //Current Node with shortest path / top of min-queue
-
-        String[] nodeCoords;
-        int edgeWeight;
-        double time = 0, speed = cellSideLength * 1.20;
-
-        Timeline timeline = new Timeline();
-        while (q.size() != 0) {
-            u = q.poll().getValue();
-            nodeCoords = u.split("-");
-
-            //Marks node as checked an saves a keyframe
-            String[] finalNodeCoords1 = nodeCoords;
-            KeyFrame kf1 = new KeyFrame(Duration.millis(time), actionEvent -> {
-                checkedNodesGC.setFill(Color.VIOLET);
-                checkedNodesGC.fillRect(Integer.parseInt(finalNodeCoords1[0]) * cellSideLength + 0.5f,
-                        Integer.parseInt(finalNodeCoords1[1]) * cellSideLength + 0.5f,
-                        cellSideLength - 1f, cellSideLength - 1f);
-
-
-            });
-            timeline.getKeyFrames().add(kf1);
-            time += speed;
-
-            //Draws current shortest path and saves its keyframe
-            String finalU = u;
-            KeyFrame kf2 = new KeyFrame(Duration.millis(time), actionEvent -> {
-                //Clears past path
-                shortestPathGC.clearRect(0, 0,
-                        shortestPathGC.getCanvas().getWidth(), shortestPathGC.getCanvas().getHeight());
-
-                String current = finalU;
-                String[] coords;
-                int[] prev = new int[2], curr = new int[2];
-                prev[0] = Integer.parseInt(finalNodeCoords1[0]);
-                prev[1] = Integer.parseInt(finalNodeCoords1[1]);
-
-                while ((current = previousVertexes.get(current)) != null) {
-                    coords = current.split("-");
-                    curr[0] = Integer.parseInt(coords[0]);
-                    curr[1] = Integer.parseInt(coords[1]);
-
-                    shortestPathGC.strokeLine(prev[0] * cellSideLength + cellSideLength / 2,
-                            prev[1] * cellSideLength + cellSideLength / 2,
-                            curr[0] * cellSideLength + cellSideLength / 2,
-                            curr[1] * cellSideLength + cellSideLength / 2);
-
-                    prev[0] = curr[0];
-                    prev[1] = curr[1];
-                }
-
-
-            });
-            timeline.getKeyFrames().add(kf2);
-            time += speed;
-
-            neighbors = adjList.getNeighbors(u);
-
-            int relaxedCounter = 0;
-            for (int i = 0; i < neighbors.length; ++i) {
-                neighbor = neighbors[i].getKey();
-                edgeWeight = neighbors[i].getValue();
-
-
-                //Relaxation step
-                //Checks if distance to neighbor node is less than the min distance already found
-                //Checks if distance to current node is infinite, to avoid overflow
-                if ((d.get(u) != Integer.MAX_VALUE) && (d.get(neighbor) > d.get(u) + edgeWeight)) {
-                    //Decreases the key for neighbor in queue
-                    q.remove(new Entry(d.get(neighbor), neighbor));//Removes and adds to prompt a min-queue restructure
-                    q.add(new Entry(d.get(u) + edgeWeight, neighbor));
-
-
-                    nodeCoords = neighbor.split("-");
-                    String[] finalNodeCoords = nodeCoords;
-                    KeyFrame kf = new KeyFrame(Duration.millis(time + relaxedCounter), actionEvent -> {
-                        checkedNodesGC.setFill(Color.PALEGREEN);
-                        checkedNodesGC.fillRect(Integer.parseInt(finalNodeCoords[0]) * cellSideLength + 0.5f,
-                                Integer.parseInt(finalNodeCoords[1]) * cellSideLength + 0.5f,
-                                cellSideLength - 1f, cellSideLength - 1f);
-
-
-                    });
-
-
-                    timeline.getKeyFrames().add(kf);
-                    relaxedCounter += speed;
-
-
-                    //Assign shorter path found to neighbor in out array
-                    d.put(neighbor, d.get(u) + edgeWeight);
-
-                    //Assigns previous shortest node to neighbor
-                    previousVertexes.put(neighbor, u);
-                }
-            }
-            time += relaxedCounter;
-
-
-            //endNode found
-            if (Objects.equals(u, endNode)) {
-                //Color grid to found
-                timeline.play();
-                return d.get(u);
-            }
-        }
-        return Integer.MAX_VALUE;
     }
 }

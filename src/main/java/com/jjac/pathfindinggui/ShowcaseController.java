@@ -1,7 +1,5 @@
 package com.jjac.pathfindinggui;
 
-import javafx.application.ConditionalFeature;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.concurrent.WorkerStateEvent;
 import javafx.event.EventHandler;
@@ -10,9 +8,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.MouseButton;
 import javafx.scene.paint.Color;
 
@@ -22,7 +17,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.net.URL;
-import java.nio.IntBuffer;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
@@ -36,7 +30,7 @@ public class ShowcaseController implements Initializable {
     @FXML
     private ToggleGroup terrainTypeToggleGroup, algorithmsToggleGroup, startEndSelectionTG;
     @FXML
-    private RadioButton clearRB, obstacleRB, roughRB, dijkstraRB, startRB, endRB;
+    private RadioButton clearRB, obstacleRB, roughRB, rougherRB, dijkstraRB, AStarRB, startRB, endRB;
     @FXML
     private Label infoLabel;
 
@@ -101,7 +95,9 @@ public class ShowcaseController implements Initializable {
         obstacleRB.setDisable(true);
         clearRB.setDisable(true);
         roughRB.setDisable(true);
+        rougherRB.setDisable(true);
         dijkstraRB.setDisable(true);
+        AStarRB.setDisable(true);
         startRB.setDisable(true);
         endRB.setDisable(true);
     }
@@ -119,13 +115,20 @@ public class ShowcaseController implements Initializable {
         obstacleRB.setDisable(false);
         clearRB.setDisable(false);
         roughRB.setDisable(false);
+        rougherRB.setDisable(false);
         dijkstraRB.setDisable(false);
+        AStarRB.setDisable(false);
         startRB.setDisable(false);
         endRB.setDisable(false);
     }
 
+    public void terminate() {
+        if (pathfindingTask != null)
+            pathfindingTask.cancel();
+    }
+
     @FXML
-    public void handleCellCountTF(ActionEvent event) {
+    private void handleCellCountTF(ActionEvent event) {
         String newCellCountStr = cellCountTF.getText();
         //Invalid cellCount value, no changes
         if (!validCellCount.matcher(newCellCountStr).matches()) {
@@ -141,7 +144,6 @@ public class ShowcaseController implements Initializable {
 
         //Resize grid and assign variables
         grid.resize(cellCount, cellCount);
-        grid.setCellSideLength(cellSideLength);
         grid.setStartNode(0, 0);
         grid.setEndNode(cellCount - 1, cellCount - 1);
 
@@ -174,7 +176,7 @@ public class ShowcaseController implements Initializable {
     }
 
     @FXML
-    public void handleStartXTF(ActionEvent event) {
+    private void handleStartXTF(ActionEvent event) {
         int value = Integer.parseInt(startXTF.getText());
         int[] oldCoords = new int[2];
         oldCoords[0] = grid.getStartNode()[0];
@@ -201,7 +203,7 @@ public class ShowcaseController implements Initializable {
     }
 
     @FXML
-    public void handleStartYTF(ActionEvent event) {
+    private void handleStartYTF(ActionEvent event) {
         int value = Integer.parseInt(startYTF.getText());
         int[] oldCoords = new int[2];
         oldCoords[0] = grid.getStartNode()[0];
@@ -228,7 +230,7 @@ public class ShowcaseController implements Initializable {
     }
 
     @FXML
-    public void handleEndXTF(ActionEvent event) {
+    private void handleEndXTF(ActionEvent event) {
         int value = Integer.parseInt(endXTF.getText());
         int[] oldCoords = new int[2];
         oldCoords[0] = grid.getEndNode()[0];
@@ -254,7 +256,7 @@ public class ShowcaseController implements Initializable {
     }
 
     @FXML
-    public void handleEndYTF(ActionEvent event) {
+    private void handleEndYTF(ActionEvent event) {
         int value = Integer.parseInt(endYTF.getText());
         int[] oldCoords = new int[2];
         oldCoords[0] = grid.getEndNode()[0];
@@ -281,19 +283,33 @@ public class ShowcaseController implements Initializable {
 
 
     @FXML
-    public void handleRunButtonAction(ActionEvent event) {
+    private void handleRunButtonAction(ActionEvent event) {
+        //Clears drawn grid
+        checkedNodesGC.clearRect(0, 0, canvasWidth, canvasHeight);
+        shortestPathGC.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        //Prevents clicks on grid
+        lockClickCanvas.toFront();
+
         disableInputs();
         stopButton.setDisable(false);
 //        infoLabel.setText("Shortest path: " + grid.findPath(algorithmUsed));
 
-
         switch (algorithmUsed) {
-            default:
+            case 0:
                 pathfindingTask = new PathFinding.DijkstraStepsTask(grid.generateAdjList(),
                         grid.getStartNode()[0] << 16 | grid.getStartNode()[1],
                         grid.getEndNode()[0] << 16 | grid.getEndNode()[1],
                         checkedNodesGC, shortestPathGC, cellSideLength);
                 break;
+            case 1:
+                pathfindingTask = new PathFinding.AStarStepsTask(grid.generateAdjList(),
+                        grid.getStartNode()[0] << 16 | grid.getStartNode()[1],
+                        grid.getEndNode()[0] << 16 | grid.getEndNode()[1],
+                        checkedNodesGC, shortestPathGC, cellSideLength);
+                break;
+            default:
+                return;
         }
 
         pathfindingTask.setOnSucceeded(new EventHandler<WorkerStateEvent>() {
@@ -304,6 +320,7 @@ public class ShowcaseController implements Initializable {
                 lockClickCanvas.toFront();
                 stopButton.setDisable(true);
                 enableInputs();
+                pathfindingTask = null;
             }
         });
 
@@ -315,6 +332,7 @@ public class ShowcaseController implements Initializable {
                 lockClickCanvas.toFront();
                 stopButton.setDisable(true);
                 enableInputs();
+                pathfindingTask = null;
             }
         });
 
@@ -323,12 +341,12 @@ public class ShowcaseController implements Initializable {
     }
 
     @FXML
-    public void handleStopButton(ActionEvent event) {
+    private void handleStopButton(ActionEvent event) {
         pathfindingTask.cancel();
     }
 
     @FXML
-    public void handleClearButton(ActionEvent event) {
+    private void handleClearButton(ActionEvent event) {
         //Clear all layers,reset Grid and redraw grid
         mainGC.clearRect(0, 0, canvasWidth, canvasHeight);
         checkedNodesGC.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -356,7 +374,7 @@ public class ShowcaseController implements Initializable {
         shortestPathGC.setStroke(Color.RED);
 //        shortestPathGC.setLineWidth(0.017585 * cellCount * cellCount - 2.74776 * cellCount + 105.425);
         shortestPathGC.setLineWidth(cellSideLength / 2);
-        checkedNodesGC.setFill(Color.VIOLET);
+        checkedNodesGC.setFill(Color.rgb(0xEE, 0x82, 0xEE, 0.5));
         startNodeGC.setFill(Color.RED);
         endNodeGC.setFill(Color.RED);
         startNodeGC.setFont(Font.font("Arial", FontWeight.BOLD, cellSideLength));
@@ -365,22 +383,7 @@ public class ShowcaseController implements Initializable {
         //First Grid draw with default values
         drawGrid();
 
-
-        //**********************
-//        int[] buffer = new int[650 * 650];
-//        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance();
-//
-//        DrawBufferShapes.drawLine(110, 50, 175, 115,
-//                10, 0xFFFF0000, buffer, 650);
-////        DrawBufferShapes.drawSquare(50.123, 300, 2, 0xFFFF0000, buffer, 650);
-//
-//
-//        PixelWriter p = shortestPathGC.getPixelWriter();
-//        p.setPixels(0, 0, 650, 650, pixelFormat, buffer, 0, 650);
-        //***********************
-
-        grid = new Grid(checkedNodesGC, shortestPathGC, cellCount, cellCount);
-        grid.setCellSideLength(cellSideLength);
+        grid = new Grid(cellCount, cellCount);
         grid.setStartNode(Integer.parseInt(startXTF.getText()), Integer.parseInt(startYTF.getText()));
         grid.setEndNode(Integer.parseInt(endXTF.getText()), Integer.parseInt(endYTF.getText()));
 
@@ -398,10 +401,13 @@ public class ShowcaseController implements Initializable {
         // terrainToggleButtons configuration
         clearRB.setUserData("1");
         obstacleRB.setUserData("0");
+        roughRB.setUserData("4");
+        rougherRB.setUserData("7");
         terrainType = Integer.parseInt((String) terrainTypeToggleGroup.getSelectedToggle().getUserData());
 
         //Algorithm to be used configuration
         dijkstraRB.setUserData("0");
+        AStarRB.setUserData("1");
         algorithmUsed = Integer.parseInt((String) algorithmsToggleGroup.getSelectedToggle().getUserData());
 
         //Start and end node configuration
@@ -419,10 +425,15 @@ public class ShowcaseController implements Initializable {
                     if (terrainTypeToggleGroup.getSelectedToggle() != null) {
                         terrainType =
                                 Integer.parseInt((String) terrainTypeToggleGroup.getSelectedToggle().getUserData());
-                        if (terrainType == 1)
-                            mainGC.setFill(Color.WHITE);
-                        else
+
+                        if (terrainType == 0)
                             mainGC.setFill(Color.BLACK);
+                        else if (terrainType == 1)
+                            mainGC.setFill(Color.WHITE);
+                        else if (terrainType == 4)
+                            mainGC.setFill(Color.CORAL);
+                        else if (terrainType == 7)
+                            mainGC.setFill(Color.BROWN);
                     }
                 }
         );
@@ -447,10 +458,12 @@ public class ShowcaseController implements Initializable {
         );
         //Listener for any type of click on lockClickCanvas
         lockClickCanvas.setOnMousePressed(mouseEvent -> {
-            //Clears checkedNodesCanvas and shortestPathCanvas after clicking
-            checkedNodesGC.clearRect(0, 0, canvasWidth, canvasHeight);
-            shortestPathGC.clearRect(0, 0, canvasWidth, canvasHeight);
-            lockClickCanvas.toBack();
+            //Clears checkedNodesCanvas and shortestPathCanvas after clicking if no task is running
+            if (pathfindingTask == null) {
+                checkedNodesGC.clearRect(0, 0, canvasWidth, canvasHeight);
+                shortestPathGC.clearRect(0, 0, canvasWidth, canvasHeight);
+                lockClickCanvas.toBack();
+            }
         });
 
 
@@ -523,5 +536,7 @@ public class ShowcaseController implements Initializable {
                     (normY * cellSideLength + 0.5f),
                     cellSideLength - 1f, cellSideLength - 1f);
         });
+//        Closing
+
     }
 }
