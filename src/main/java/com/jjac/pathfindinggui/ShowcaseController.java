@@ -38,6 +38,7 @@ public class ShowcaseController implements Initializable {
     private Grid grid;
     private int terrainType, algorithmUsed, nodeTypeToSelect, cellCount;
     private double cellSideLength, canvasWidth, canvasHeight;
+    private static final String info = "Info", cancelled = "CANCELLED", shortest = "Shortest path: ";
     private Task<Integer> pathfindingTask;
 
     private final Pattern validCellCount = Pattern.compile("^([2-9]|[1-9][0-9]|[1][0][0])$");
@@ -293,6 +294,7 @@ public class ShowcaseController implements Initializable {
 
         disableInputs();
         stopButton.setDisable(false);
+        infoLabel.setText(info);
 //        infoLabel.setText("Shortest path: " + grid.findPath(algorithmUsed));
 
         switch (algorithmUsed) {
@@ -316,7 +318,7 @@ public class ShowcaseController implements Initializable {
             @Override
             public void handle(WorkerStateEvent workerStateEvent) {
                 Integer result = pathfindingTask.getValue();
-                infoLabel.setText("Shortest path: " + result);
+                infoLabel.setText(shortest + result);
                 lockClickCanvas.toFront();
                 stopButton.setDisable(true);
                 enableInputs();
@@ -328,7 +330,7 @@ public class ShowcaseController implements Initializable {
             @Override
             public void handle(WorkerStateEvent workerStateEvent) {
                 Integer result = pathfindingTask.getValue();
-                infoLabel.setText("CANCELED");
+                infoLabel.setText(cancelled);
                 lockClickCanvas.toFront();
                 stopButton.setDisable(true);
                 enableInputs();
@@ -372,7 +374,6 @@ public class ShowcaseController implements Initializable {
         mainGC.setLineWidth(1.0);
         mainGC.setFill(Color.BLACK);
         shortestPathGC.setStroke(Color.RED);
-//        shortestPathGC.setLineWidth(0.017585 * cellCount * cellCount - 2.74776 * cellCount + 105.425);
         shortestPathGC.setLineWidth(cellSideLength / 2);
         checkedNodesGC.setFill(Color.rgb(0xEE, 0x82, 0xEE, 0.5));
         startNodeGC.setFill(Color.RED);
@@ -508,8 +509,6 @@ public class ShowcaseController implements Initializable {
                     endNodeGC.clearRect((oldCoords[0] * cellSideLength + 0.5f), (oldCoords[1] * cellSideLength + 0.5f),
                             cellSideLength - 1f, cellSideLength - 1f);
 
-//                    endNodeGC.fillText("X", normX * cellSideLength + 0.5f + cellSideLength / 4f,
-//                            normY * cellSideLength + cellSideLength - 1f);
                     endNodeGC.fillText("X", (normX + (1 / 8f)) * cellSideLength,
                             (normY + (6 / 7f)) * cellSideLength);
 
@@ -536,7 +535,5 @@ public class ShowcaseController implements Initializable {
                     (normY * cellSideLength + 0.5f),
                     cellSideLength - 1f, cellSideLength - 1f);
         });
-//        Closing
-
     }
 }

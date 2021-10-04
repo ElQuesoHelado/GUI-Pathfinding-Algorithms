@@ -190,7 +190,7 @@ public class AdjList<V> {
      *  node3 node4 edge2
      *  ...
      * */
-    public void readAndAddBufferedReader(BufferedReader reader) throws Exception {
+    public void readAndAddBufferedReader(BufferedReader reader) {
         String line;
         String[] lineArray;
 

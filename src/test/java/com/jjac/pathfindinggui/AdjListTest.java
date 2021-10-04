@@ -38,22 +38,22 @@ class AdjListTest {
         list.addDirectedEdge("NODE2", "NODE4", 0);
         list.addDirectedEdge("NODE4", "NODE4", 1);
 
-        assertEquals(list.getNeighbors("NODE1").get(0).getKey().key, "NODE2");
+        assertEquals(list.getNeighbors("NODE1").get(0).getKey().value, "NODE2");
         assertEquals(list.getNeighbors("NODE1").get(0).getValue(), 12);
-        assertEquals(list.getNeighbors("NODE1").get(1).getKey().key, "NODE3");
+        assertEquals(list.getNeighbors("NODE1").get(1).getKey().value, "NODE3");
         assertEquals(list.getNeighbors("NODE1").get(1).getValue(), -999);
 
-        assertEquals(list.getNeighbors("NODE3").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE3").get(0).getKey().value, "NODE1");
         assertEquals(list.getNeighbors("NODE3").get(0).getValue(), 78);
-        assertEquals(list.getNeighbors("NODE3").get(1).getKey().key, "NODE5");
+        assertEquals(list.getNeighbors("NODE3").get(1).getKey().value, "NODE5");
         assertEquals(list.getNeighbors("NODE3").get(1).getValue(), 1111);
-        assertEquals(list.getNeighbors("NODE3").get(2).getKey().key, "NODE2");
+        assertEquals(list.getNeighbors("NODE3").get(2).getKey().value, "NODE2");
         assertEquals(list.getNeighbors("NODE3").get(2).getValue(), 25);
 
-        assertEquals(list.getNeighbors("NODE2").get(0).getKey().key, "NODE4");
+        assertEquals(list.getNeighbors("NODE2").get(0).getKey().value, "NODE4");
         assertEquals(list.getNeighbors("NODE2").get(0).getValue(), 0);
 
-        assertEquals(list.getNeighbors("NODE4").get(0).getKey().key, "NODE4");
+        assertEquals(list.getNeighbors("NODE4").get(0).getKey().value, "NODE4");
         assertEquals(list.getNeighbors("NODE4").get(0).getValue(), 1);
     }
 
@@ -65,22 +65,22 @@ class AdjListTest {
         list.addBidirectionalEdge("NODE3", "NODE1", 78);
         list.addBidirectionalEdge("NODE4", "NODE1", -1);
 
-        assertEquals(list.getNeighbors("NODE1").get(0).getKey().key, "NODE2");
+        assertEquals(list.getNeighbors("NODE1").get(0).getKey().value, "NODE2");
         assertEquals(list.getNeighbors("NODE1").get(0).getValue(), 2);
-        assertEquals(list.getNeighbors("NODE1").get(1).getKey().key, "NODE3");
+        assertEquals(list.getNeighbors("NODE1").get(1).getKey().value, "NODE3");
         assertEquals(list.getNeighbors("NODE1").get(1).getValue(), 78);
-        assertEquals(list.getNeighbors("NODE1").get(2).getKey().key, "NODE4");
+        assertEquals(list.getNeighbors("NODE1").get(2).getKey().value, "NODE4");
         assertEquals(list.getNeighbors("NODE1").get(2).getValue(), -1);
 
-        assertEquals(list.getNeighbors("NODE2").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE2").get(0).getKey().value, "NODE1");
         assertEquals(list.getNeighbors("NODE2").get(0).getValue(), 2);
-        assertEquals(list.getNeighbors("NODE2").get(1).getKey().key, "NODE3");
+        assertEquals(list.getNeighbors("NODE2").get(1).getKey().value, "NODE3");
         assertEquals(list.getNeighbors("NODE2").get(1).getValue(), 0);
 
-        assertEquals(list.getNeighbors("NODE3").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE3").get(0).getKey().value, "NODE1");
         assertEquals(list.getNeighbors("NODE3").get(0).getValue(), 78);
 
-        assertEquals(list.getNeighbors("NODE4").get(0).getKey().key, "NODE1");
+        assertEquals(list.getNeighbors("NODE4").get(0).getKey().value, "NODE1");
         assertEquals(list.getNeighbors("NODE4").get(0).getValue(), -1);
     }
 

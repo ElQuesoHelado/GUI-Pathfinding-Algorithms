@@ -2,97 +2,11 @@ package com.jjac.pathfindinggui;
 
 import javafx.concurrent.Task;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritablePixelFormat;
 import javafx.util.Pair;
 
-import java.nio.ByteBuffer;
-import java.util.*;
-
-/*
- * Utility classes to represent a pair inside a Priority Queue
- * Comparisons are made with the Integer key, for ranking purposes
- * */
-class Entry implements Comparable<Entry> {
-    private final Integer key;
-    private final String value;
-
-    Entry(int key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public int getKey() {
-        return key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    @Override
-    public int compareTo(Entry other) {
-        return Integer.compare(key, other.getKey());
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (obj == this) return true;
-        if (!(obj instanceof Entry)) return false;
-
-        final Entry other = (Entry) obj;
-        if (!this.key.equals(other.getKey()))
-            return false;
-        return Objects.equals(this.value, other.getValue());
-    }
-}
-
-class IntegerEntry implements Comparable<IntegerEntry> {
-    private final Integer key;
-    private final Integer value;
-
-    IntegerEntry(int key, int value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public int getKey() {
-        return key;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    @Override
-    public int compareTo(IntegerEntry other) {
-        return Integer.compare(this.key, other.getKey());
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) return false;
-        if (obj == this) return true;
-        if (!(obj instanceof IntegerEntry)) return false;
-
-        final IntegerEntry other = (IntegerEntry) obj;
-        if (!this.key.equals(other.getKey()))
-            return false;
-        return this.value == other.getValue();
-    }
-}
-
-class IntegerBooleanPair {
-    public int i;
-    public boolean b;
-
-    IntegerBooleanPair(int i, boolean b) {
-        this.i = i;
-        this.b = b;
-    }
-}
+import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Queue;
 
 /*
  * PathFinding utility class
@@ -117,7 +31,6 @@ public final class PathFinding {
         else
             return 2 * (dy - dx) + 2 * dx;
     }
-
 
     /*
      * A* pathfinding algorithm
@@ -369,15 +282,6 @@ public final class PathFinding {
             //Fibonacci Heap for storing current shortest path
             FibHeap<Integer, Integer> q = new FibHeap<>();
 
-            //Hashtable used for backtracking of vertex, each key node has of value the previous node of shortest path
-//            HashMap<Integer, Integer> previousVertexes = new HashMap<>(adjList.size());
-//
-//            for (Integer key : adjList.getKeySet()) { //Sets all initial distances to infinity
-//                d.putIfAbsent(key, Integer.MAX_VALUE);
-//                q.add(new IntegerEntry(Integer.MAX_VALUE, key));
-//                previousVertexes.putIfAbsent(key, Integer.MIN_VALUE);
-//            }
-
             //Set source node value to 0
             q.insert(adjList.getNode(startNode), 0);
             q.peek().d = 0;
@@ -467,11 +371,6 @@ public final class PathFinding {
             //Helper variables
             LinkedList<Pair<Node<Integer, Integer>, Integer>> neighbors;//Array of pairs <neighborKey, edgeWeight>
             Node<Integer, Integer> neighbor, u;
-            //Variables used for buffer drawing
-            byte[] shortestPathBuffer = new byte[650 * 650 * 4], checkedNodesBuffer = new byte[650 * 650 * 4];
-            WritablePixelFormat<ByteBuffer> pixelFormat = PixelFormat.getByteBgraPreInstance();
-            PixelWriter shortestPathPW = shortestPathGC.getPixelWriter();
-            PixelWriter checkedNodesPW = checkedNodesGC.getPixelWriter();
             long speed = (long) (cellSideLength * 1.20);
 
             while (!isCancelled() && q.size() != 0) {

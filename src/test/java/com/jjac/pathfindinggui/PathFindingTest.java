@@ -86,12 +86,6 @@ class PathFindingTest {
         pathList = new LinkedList<>();
         path = PathFinding.AStar(list, 0x00030000, 0x00020005, pathList);
         assertEquals(11, path);
-        expectedPathList = new LinkedList<>(
-                List.of(Integer.toString(0x00030000), Integer.toString(0x00030001),
-                        Integer.toString(0x00040002), Integer.toString(0x00050003),
-                        Integer.toString(0x00040004), Integer.toString(0x00030005),
-                        Integer.toString(0x00020005)));
-//        assertEquals(expectedPathList, pathList);
 
         pathList = new LinkedList<>();
         path = PathFinding.AStar(list, 0x00000005, 0x00020003, pathList);

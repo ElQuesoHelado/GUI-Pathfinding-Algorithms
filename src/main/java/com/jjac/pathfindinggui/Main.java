@@ -18,8 +18,8 @@ public class Main extends Application {
 
         controller = (ShowcaseController) loader.getController();
 
-        primaryStage.setTitle("Showcase");
-        primaryStage.setScene(new Scene(root, 1000, 800));
+        primaryStage.setTitle("PathfindingGUI");
+        primaryStage.setScene(new Scene(root, 800, 700));
         primaryStage.show();
     }
 
