@@ -2,7 +2,7 @@
 JavaFX GUI based java application for visualising different pathfinding algorithms
 
 # Usage
--Run PathfindingGUI/PathfindingGUI.bat inside bin folder in Zip release
+-Run PathfindingGUI/PathfindingGUI.bat inside bin folder in Zip release  
 -Changes in terrain are drawn by clicking or dragging left mouse click
   * Obstacle : non passable grid square
   * Clear : passable grid with cost 1
