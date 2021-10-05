@@ -1,5 +1,8 @@
 # GUI-Pathfinding-Algorithms
 JavaFX GUI based java application for visualising different pathfinding algorithms
+
+# Usage
+-Run PathfindingGUI/PathfindingGUI.bat inside bin folder in Zip release
 -Changes in terrain are drawn by clicking or dragging left mouse click
   * Obstacle : non passable grid square
   * Clear : passable grid with cost 1
@@ -8,8 +11,11 @@ JavaFX GUI based java application for visualising different pathfinding algorith
 -Diagonal and right angle movements have the same cost
 -Right clicking selects the Start/End node in the grid
 
+
 Dijkstra/BFS
 ![](dijkstra.gif)
+
+
 
 A*
 ![](Astar.gif)
